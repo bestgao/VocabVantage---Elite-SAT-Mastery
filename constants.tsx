@@ -21,7 +21,17 @@ export const INITIAL_WORDS: Word[] = [
   { id: '17', term: 'Inimical', definition: 'Tending to obstruct or harm.', partOfSpeech: 'adjective', example: 'Actions inimical to our interests will be punished.', synonyms: ['harmful', 'hostile'] },
   { id: '18', term: 'Loquacious', definition: 'Tending to talk a great deal.', partOfSpeech: 'adjective', example: 'The loquacious barber kept me in the chair for an hour.', synonyms: ['talkative', 'garrulous'] },
   { id: '19', term: 'Opaque', definition: 'Not able to be seen through; not transparent.', partOfSpeech: 'adjective', example: 'The technical jargon made the instructions opaque.', synonyms: ['cloudy', 'obscure'] },
-  { id: '20', term: 'Pedant', definition: 'A person excessively concerned with minor details.', partOfSpeech: 'noun', example: 'The history professor was a bit of a pedant.', synonyms: ['perfectionist'] }
+  { id: '20', term: 'Pedant', definition: 'A person excessively concerned with minor details.', partOfSpeech: 'noun', example: 'The history professor was a bit of a pedant.', synonyms: ['perfectionist'] },
+  { id: '21', term: 'Alacrity', definition: 'Brisk and cheerful readiness.', partOfSpeech: 'noun', example: 'She accepted the invitation with alacrity.', synonyms: ['eagerness', 'willingness'] },
+  { id: '22', term: 'Boisterous', definition: 'Noisy, energetic, and cheerful.', partOfSpeech: 'adjective', example: 'The boisterous crowd cheered for the winning team.', synonyms: ['rowdy', 'clamorous'] },
+  { id: '23', term: 'Complacent', definition: 'Showing uncritical satisfaction with oneself.', partOfSpeech: 'adjective', example: 'We cannot afford to be complacent about our security.', synonyms: ['smug', 'self-satisfied'] },
+  { id: '24', term: 'Deference', definition: 'Humble submission and respect.', partOfSpeech: 'noun', example: 'He addressed her with the deference due to her age.', synonyms: ['respect', 'esteem'] },
+  { id: '25', term: 'Enervate', definition: 'To cause someone to feel drained of energy.', partOfSpeech: 'verb', example: 'The hot sun began to enervate the hikers.', synonyms: ['exhaust', 'weaken'] },
+  { id: '26', term: 'Furtive', definition: 'Attempting to avoid notice, typically because of guilt.', partOfSpeech: 'adjective', example: 'They spent a furtive day together in the city.', synonyms: ['secretive', 'surreptitious'] },
+  { id: '27', term: 'Garrulous', definition: 'Excessively talkative, especially on trivial matters.', partOfSpeech: 'adjective', example: 'The garrulous neighbor kept her talking for an hour.', synonyms: ['talkative', 'loquacious'] },
+  { id: '28', term: 'Harangue', definition: 'A lengthy and aggressive speech.', partOfSpeech: 'noun', example: 'The coach delivered a loud harangue to the players.', synonyms: ['tirade', 'lecture'] },
+  { id: '29', term: 'Impetuous', definition: 'Acting or done quickly without thought or care.', partOfSpeech: 'adjective', example: 'Her impetuous nature often led her into trouble.', synonyms: ['impulsive', 'rash'] },
+  { id: '30', term: 'Jovial', definition: 'Cheerful and friendly.', partOfSpeech: 'adjective', example: 'He was in a jovial mood after the news.', synonyms: ['cheerful', 'jolly'] }
 ];
 
 export const SAT_TRANSITIONS = [
@@ -41,8 +51,8 @@ export const XP_PER_QUIZ = 50;
 export const XP_PER_WORD_UPGRADE = 15;
 
 export const MASTERY_COLORS = {
-  0: { label: 'Not Started', bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200', hex: '#f43f5e' },
-  1: { label: 'Learning', bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200', hex: '#f97316' },
-  2: { label: 'Getting Close', bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200', hex: '#fbbf24' },
-  3: { label: 'Mastered', bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', hex: '#10b981' }
+  0: { label: 'Level 1: Hard', bg: 'bg-rose-950/10', text: 'text-rose-900', border: 'border-rose-950', hex: '#4c0519' },
+  1: { label: 'Level 2: Learning', bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-500', hex: '#ea580c' },
+  2: { label: 'Level 3: Review', bg: 'bg-yellow-50', text: 'text-yellow-600', border: 'border-yellow-400', hex: '#ca8a04' },
+  3: { label: 'Level 4: Mastered', bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-500', hex: '#10b981' }
 };

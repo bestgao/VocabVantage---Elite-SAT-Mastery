@@ -1,5 +1,5 @@
 
-export type MasteryLevel = 0 | 1 | 2 | 3; // 0: Not Started, 1: Learning, 2: Near Mastery, 3: Mastered
+export type MasteryLevel = 0 | 1 | 2 | 3; // 0: Level 1 (Hard), 1: Level 2 (Learning), 2: Level 3 (Review), 3: Level 4 (Mastered)
 
 export interface UserInventory {
   streakFreezes: number;
@@ -8,16 +8,18 @@ export interface UserInventory {
 
 export interface UserProgress {
   wordMastery: Record<string, MasteryLevel>;
+  masteryHistory: Record<string, number>; // date (YYYY-MM-DD) -> count of level 3 words
+  customWords: Word[];
   streak: number;
-  lastActive: string; // ISO String
-  lastCheckIn: string; // ISO String
+  lastActive: string; 
+  lastCheckIn: string; 
   xp: number;
   credits: number; 
   highScores: Record<string, number>;
   inventory: UserInventory;
   achievements: string[];
-  academicIntegrity: number; // 0-100 score to prevent botting
-  isPremium: boolean; // Tracks if the user has a paid subscription
+  academicIntegrity: number;
+  isPremium: boolean;
 }
 
 export interface Word {
