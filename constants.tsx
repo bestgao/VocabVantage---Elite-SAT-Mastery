@@ -1,11 +1,6 @@
 
 import { Word } from './types';
 
-/**
- * DATA INPUT STRATEGY:
- * For 2,000+ words, you should ideally load this from a external JSON file.
- * Below is the structured format required for the app's injection.
- */
 export const INITIAL_WORDS: Word[] = [
   { id: '1', term: 'Abate', definition: 'To become less active or intense.', partOfSpeech: 'verb', example: 'The storm began to abate after midnight.', synonyms: ['subside', 'ebb'] },
   { id: '2', term: 'Abjure', definition: 'To solemnly renounce a belief.', partOfSpeech: 'verb', example: 'He abjured his allegiance to the king.', synonyms: ['renounce', 'reject'] },
@@ -27,6 +22,19 @@ export const INITIAL_WORDS: Word[] = [
   { id: '18', term: 'Loquacious', definition: 'Tending to talk a great deal.', partOfSpeech: 'adjective', example: 'The loquacious barber kept me in the chair for an hour.', synonyms: ['talkative', 'garrulous'] },
   { id: '19', term: 'Opaque', definition: 'Not able to be seen through; not transparent.', partOfSpeech: 'adjective', example: 'The technical jargon made the instructions opaque.', synonyms: ['cloudy', 'obscure'] },
   { id: '20', term: 'Pedant', definition: 'A person excessively concerned with minor details.', partOfSpeech: 'noun', example: 'The history professor was a bit of a pedant.', synonyms: ['perfectionist'] }
+];
+
+export const SAT_TRANSITIONS = [
+  { s1: "The study showed significant results.", s2: "the sample size was quite small.", options: ["However", "Therefore", "Moreover", "Likewise"], correct: 0, type: "Contrast" },
+  { s1: "Exercise improves cardiovascular health.", s2: "it has been linked to better mental clarity.", options: ["In fact", "Nevertheless", "Instead", "Meanwhile"], correct: 0, type: "Addition" },
+  { s1: "The temperature dropped below freezing.", s2: "the water in the pipes expanded and burst.", options: ["Consequently", "Conversely", "Similarly", "Regardless"], correct: 0, type: "Cause-Effect" },
+  { s1: "She had never traveled abroad before.", s2: "she felt remarkably comfortable in the bustling streets of Tokyo.", options: ["Yet", "Furthermore", "Accordingly", "For instance"], correct: 0, type: "Contrast" }
+];
+
+export const SYNTAX_CHALLENGES = [
+  { text: "The team of scientists [was] researching the [effects] of gravity; [however] they [hadnt] found the answer.", errorIndex: 2, correction: "however, (missing punctuation)", options: ["was", "effects", "however", "hadnt"] },
+  { text: "Neither the [students] nor the [teacher] [were] aware that the [bell] had already rung.", errorIndex: 2, correction: "was (subject-verb agreement)", options: ["students", "teacher", "were", "bell"] },
+  { text: "After [finishing] the race, the [medals] [were] [handed] out to the winners.", errorIndex: 1, correction: "The runners (misplaced modifier)", options: ["finishing", "medals", "were", "handed"] }
 ];
 
 export const XP_PER_QUIZ = 50;
