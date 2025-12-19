@@ -12,11 +12,29 @@ export interface Word {
   imageUrl?: string;
 }
 
+export interface UserInventory {
+  streakFreezes: number;
+  xpBoosters: number;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  tier: 'bronze' | 'silver' | 'gold' | 'diamond';
+  description: string;
+  isUnlocked: boolean;
+}
+
 export interface UserProgress {
-  wordMastery: Record<string, MasteryLevel>; // id -> level
+  wordMastery: Record<string, MasteryLevel>;
   streak: number;
-  lastActive: string;
+  lastActive: string; // ISO String
+  lastCheckIn: string; // ISO String for reward claim
   xp: number;
+  credits: number; // Vantage Credits (VC)
+  highScores: Record<string, number>;
+  inventory: UserInventory;
+  achievements: string[]; // IDs of unlocked achievements
 }
 
 export enum AppScreen {
@@ -24,7 +42,11 @@ export enum AppScreen {
   LEARN = 'LEARN',
   QUIZ = 'QUIZ',
   WORD_BANK = 'WORD_BANK',
-  AI_TUTOR = 'AI_TUTOR'
+  AI_TUTOR = 'AI_TUTOR',
+  GAMES = 'GAMES',
+  LEADERBOARD = 'LEADERBOARD',
+  STORE = 'STORE',
+  ACHIEVEMENTS = 'ACHIEVEMENTS'
 }
 
 export interface QuizQuestion {
