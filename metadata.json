@@ -1,0 +1,8 @@
+{
+  "name": "VocabVantage - Elite SAT Mastery",
+  "description": "A high-performance SAT vocabulary learning platform featuring AI-powered mnemonics, image associations, and spaced-repetition flashcards to maximize retention and score potential.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
