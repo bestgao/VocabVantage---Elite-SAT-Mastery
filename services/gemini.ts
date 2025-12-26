@@ -16,6 +16,26 @@ export const validateSystemConnection = async (): Promise<{ status: 'online' | '
   }
 };
 
+export const fetchSynonymsAndMnemonics = async (word: string, definition: string) => {
+  const ai = getAI();
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `Generate 3 high-level SAT synonyms and 1 memorable mnemonic for "${word}" (${definition}). JSON ONLY.`,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          synonyms: { type: Type.ARRAY, items: { type: Type.STRING } },
+          mnemonic: { type: Type.STRING }
+        },
+        required: ["synonyms", "mnemonic"]
+      }
+    }
+  });
+  return JSON.parse(response.text || "{}");
+};
+
 export const generateSATQuestion = async (word: string, definition: string) => {
   const ai = getAI();
   const response = await ai.models.generateContent({

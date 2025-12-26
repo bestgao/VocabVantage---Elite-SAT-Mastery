@@ -19,12 +19,11 @@ const App: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>(AppScreen.DASHBOARD);
   const [sessionWords, setSessionWords] = useState<Word[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [titanLibrary, setTitanLibrary] = useState<Word[] | null>(null);
+  const [titanLibrary, setTitanLibrary] = useState<Word[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
 
   useEffect(() => {
     const initializeApp = () => {
-      const masterCore = GET_MASTER_CORE();
       const mainStore = localStorage.getItem(STORAGE_KEY);
       let savedData: any = mainStore ? JSON.parse(mainStore) : null;
 
@@ -37,7 +36,20 @@ const App: React.FC = () => {
         lastConfig: { levels: ['Core', 'Medium', 'Advanced'], freqs: ['High', 'Mid', 'Low'], masteries: [0, 1, 2] }
       };
 
-      setTitanLibrary(masterCore);
+      // Load library: saved custom words + master core
+      const baseLibrary = GET_MASTER_CORE();
+      const savedLibrary = savedData?.library || [];
+      
+      // Deduplicate by word term
+      const combined = [...savedLibrary];
+      const existingTerms = new Set(combined.map(w => w.term.toLowerCase()));
+      baseLibrary.forEach(w => {
+        if (!existingTerms.has(w.term.toLowerCase())) {
+          combined.push(w);
+        }
+      });
+
+      setTitanLibrary(combined);
       setProgress(initialProgress);
       setIsInitializing(false);
     };
@@ -46,8 +58,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isInitializing || !progress) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ progress, version: CURRENT_VERSION }));
-  }, [progress, isInitializing]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ 
+      progress, 
+      library: titanLibrary,
+      version: CURRENT_VERSION 
+    }));
+  }, [progress, titanLibrary, isInitializing]);
 
   const handleWordUpdate = useCallback((id: string, newLevel: MasteryLevel) => {
     const todayKey = new Date().toISOString().split('T')[0];
@@ -67,10 +83,13 @@ const App: React.FC = () => {
     });
   }, []);
 
+  const handleWordPropertyUpdate = useCallback((id: string, updates: Partial<Word>) => {
+    setTitanLibrary(prev => prev.map(w => w.id === id ? { ...w, ...updates } : w));
+  }, []);
+
   const handleQuickStart = () => {
-    if (!titanLibrary || !progress) return;
     const pool = titanLibrary.flatMap(w => {
-      const m = progress.wordMastery[w.id] || 0;
+      const m = progress?.wordMastery[w.id] || 0;
       return Array(4 - m).fill(w);
     });
     const unique = new Set<Word>();
@@ -81,7 +100,7 @@ const App: React.FC = () => {
     setScreen(AppScreen.LEARN);
   };
 
-  if (isInitializing || !progress || !titanLibrary) return null;
+  if (isInitializing || !progress || titanLibrary.length === 0) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -106,11 +125,27 @@ const App: React.FC = () => {
           <Dashboard progress={{...progress, customWords: titanLibrary}} onNavigate={setScreen} appVersion={CURRENT_VERSION} onUpdateGoal={(g) => setProgress(p => p ? ({...p, dailyMasteryGoal: g}) : p)} onQuickStart={handleQuickStart} onDiscover={() => {}} isDiscovering={false} onClaim={() => 0} onUpgrade={() => {}} onReset={() => {}} onImportSync={() => {}} />
         )}
         {screen === AppScreen.LEARN && (
-          <Flashcards words={sessionWords} currentMastery={progress.wordMastery} onWordUpdate={handleWordUpdate} onWordPropertyUpdate={(id, up) => setTitanLibrary(prev => prev ? prev.map(w => w.id === id ? {...w, ...up} : w) : prev)} onBack={() => setScreen(AppScreen.DASHBOARD)} />
+          <Flashcards 
+            words={sessionWords} 
+            currentMastery={progress.wordMastery} 
+            onWordUpdate={handleWordUpdate} 
+            onWordPropertyUpdate={handleWordPropertyUpdate} 
+            onBack={() => setScreen(AppScreen.DASHBOARD)} 
+          />
         )}
         {screen === AppScreen.AI_TUTOR && <AITutor onBack={() => setScreen(AppScreen.DASHBOARD)} />}
         {screen === AppScreen.WORD_BANK && (
-          <WordBank words={titanLibrary} progress={progress.wordMastery} onImport={(w) => setTitanLibrary(prev => [...(prev || []), ...w])} onDelete={() => {}} onClose={() => setScreen(AppScreen.DASHBOARD)} />
+          <WordBank 
+            words={titanLibrary} 
+            progress={progress.wordMastery} 
+            onImport={(w) => setTitanLibrary(prev => {
+                const existing = new Set(prev.map(item => item.term.toLowerCase()));
+                const filtered = w.filter(item => !existing.has(item.term.toLowerCase()));
+                return [...prev, ...filtered];
+            })} 
+            onDelete={() => {}} 
+            onClose={() => setScreen(AppScreen.DASHBOARD)} 
+          />
         )}
         {screen === AppScreen.GAMES && (
           <GameHub words={titanLibrary} onBack={() => setScreen(AppScreen.DASHBOARD)} onXP={(amount) => setProgress(p => p ? ({...p, xp: p.xp + amount}) : p)} />
