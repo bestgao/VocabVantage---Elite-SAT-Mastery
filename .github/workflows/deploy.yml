@@ -25,17 +25,15 @@ jobs:
         with:
           node-version: 18
 
-      - name: Clean install (force correct platform binaries)
-        run: |
-          node -v
-          npm -v
-          rm -rf node_modules
-          npm config set optional true
-          npm config delete omit || true
-          npm install --include=optional --no-audit --no-fund
-          npm rebuild
-          ls -la node_modules/@rollup || true
-          npm run build
+- name: Clean install (force correct platform binaries)
+  run: |
+    node -v
+    npm -v
+    rm -rf node_modules
+    npm install --include=optional --no-audit --no-fund
+    npm rebuild
+    ls -la node_modules/@rollup || true
+    npm run build
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
