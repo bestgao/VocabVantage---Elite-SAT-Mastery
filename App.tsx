@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { UserProgress, AppScreen, MasteryLevel, Word } from './types';
 import { GET_MASTER_CORE } from './database';
 import { XP_PER_WORD_UPGRADE } from './constants';
+import { validateSystemConnection } from './services/gemini';
 import Dashboard from './components/Dashboard';
 import Flashcards from './components/Flashcards';
 import WordBank from './components/WordBank';
@@ -12,7 +13,7 @@ import Leaderboard from './components/Leaderboard';
 import RewardStore from './components/RewardStore';
 import MedalGallery from './components/MedalGallery';
 
-const CURRENT_VERSION = '2.8.0';
+const CURRENT_VERSION = '2.8.1';
 const STORAGE_KEY = 'vv_unified_vault_production';
 
 const App: React.FC = () => {
@@ -21,9 +22,10 @@ const App: React.FC = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [titanLibrary, setTitanLibrary] = useState<Word[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
+  const [aiStatus, setAiStatus] = useState<'syncing' | 'online' | 'offline'>('syncing');
 
   useEffect(() => {
-    const initializeApp = () => {
+    const initializeApp = async () => {
       const mainStore = localStorage.getItem(STORAGE_KEY);
       let savedData: any = mainStore ? JSON.parse(mainStore) : null;
 
@@ -36,22 +38,21 @@ const App: React.FC = () => {
         lastConfig: { levels: ['Core', 'Medium', 'Advanced'], freqs: ['High', 'Mid', 'Low'], masteries: [0, 1, 2] }
       };
 
-      // Load library: saved custom words + master core
       const baseLibrary = GET_MASTER_CORE();
       const savedLibrary = savedData?.library || [];
-      
-      // Deduplicate by word term
       const combined = [...savedLibrary];
       const existingTerms = new Set(combined.map(w => w.term.toLowerCase()));
       baseLibrary.forEach(w => {
-        if (!existingTerms.has(w.term.toLowerCase())) {
-          combined.push(w);
-        }
+        if (!existingTerms.has(w.term.toLowerCase())) combined.push(w);
       });
 
       setTitanLibrary(combined);
       setProgress(initialProgress);
       setIsInitializing(false);
+
+      // System Health Check
+      const check = await validateSystemConnection();
+      setAiStatus(check.status === 'online' ? 'online' : 'offline');
     };
     initializeApp();
   }, []);
@@ -85,6 +86,7 @@ const App: React.FC = () => {
 
   const handleWordPropertyUpdate = useCallback((id: string, updates: Partial<Word>) => {
     setTitanLibrary(prev => prev.map(w => w.id === id ? { ...w, ...updates } : w));
+    setSessionWords(prev => prev.map(w => w.id === id ? { ...w, ...updates } : w));
   }, []);
 
   const handleQuickStart = () => {
@@ -104,17 +106,24 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <nav className="bg-slate-950 sticky top-0 z-50 h-20 shadow-2xl flex items-center px-4">
+      <nav className="bg-slate-950 sticky top-0 z-50 h-20 shadow-2xl flex items-center px-6">
         <div className="max-w-6xl mx-auto w-full flex justify-between items-center">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setScreen(AppScreen.DASHBOARD)}>
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">V</div>
+          <div className="flex items-center space-x-4 cursor-pointer" onClick={() => setScreen(AppScreen.DASHBOARD)}>
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/20">V</div>
             <span className="font-black text-2xl tracking-tighter text-white">VocabVantage</span>
           </div>
-          <div className="flex items-center space-x-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
-            <button onClick={() => setScreen(AppScreen.AI_TUTOR)} className="px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-lg border border-indigo-500/30 hover:bg-indigo-500/20 transition-all">Neural Tutor</button>
-            <div className="flex flex-col items-end">
-               <span className="text-white font-bold">{progress.xp.toLocaleString()} XP</span>
-               <span className="text-indigo-500 font-bold">{progress.credits.toLocaleString()} VC</span>
+          
+          <div className="flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${aiStatus === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : aiStatus === 'offline' ? 'bg-rose-500' : 'bg-slate-600 animate-pulse'}`}></div>
+              <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${aiStatus === 'online' ? 'text-emerald-500' : 'text-slate-500'}`}>
+                {aiStatus === 'online' ? 'Neural Link Active' : aiStatus === 'offline' ? 'Offline' : 'Syncing...'}
+              </span>
+            </div>
+            <button onClick={() => setScreen(AppScreen.AI_TUTOR)} className="px-5 py-2.5 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500/20 transition-all">Tutor</button>
+            <div className="flex flex-col items-end leading-none">
+               <span className="text-white font-black text-lg tracking-tight">{progress.xp.toLocaleString()} <span className="text-[10px] text-slate-500 font-bold uppercase">XP</span></span>
+               <span className="text-indigo-400 font-black text-[10px] uppercase tracking-widest">{progress.credits.toLocaleString()} VC</span>
             </div>
           </div>
         </div>
@@ -125,27 +134,15 @@ const App: React.FC = () => {
           <Dashboard progress={{...progress, customWords: titanLibrary}} onNavigate={setScreen} appVersion={CURRENT_VERSION} onUpdateGoal={(g) => setProgress(p => p ? ({...p, dailyMasteryGoal: g}) : p)} onQuickStart={handleQuickStart} onDiscover={() => {}} isDiscovering={false} onClaim={() => 0} onUpgrade={() => {}} onReset={() => {}} onImportSync={() => {}} />
         )}
         {screen === AppScreen.LEARN && (
-          <Flashcards 
-            words={sessionWords} 
-            currentMastery={progress.wordMastery} 
-            onWordUpdate={handleWordUpdate} 
-            onWordPropertyUpdate={handleWordPropertyUpdate} 
-            onBack={() => setScreen(AppScreen.DASHBOARD)} 
-          />
+          <Flashcards words={sessionWords} currentMastery={progress.wordMastery} onWordUpdate={handleWordUpdate} onWordPropertyUpdate={handleWordPropertyUpdate} onBack={() => setScreen(AppScreen.DASHBOARD)} />
         )}
         {screen === AppScreen.AI_TUTOR && <AITutor onBack={() => setScreen(AppScreen.DASHBOARD)} />}
         {screen === AppScreen.WORD_BANK && (
-          <WordBank 
-            words={titanLibrary} 
-            progress={progress.wordMastery} 
-            onImport={(w) => setTitanLibrary(prev => {
+          <WordBank words={titanLibrary} progress={progress.wordMastery} onImport={(w) => setTitanLibrary(prev => {
                 const existing = new Set(prev.map(item => item.term.toLowerCase()));
                 const filtered = w.filter(item => !existing.has(item.term.toLowerCase()));
                 return [...prev, ...filtered];
-            })} 
-            onDelete={() => {}} 
-            onClose={() => setScreen(AppScreen.DASHBOARD)} 
-          />
+            })} onDelete={() => {}} onClose={() => setScreen(AppScreen.DASHBOARD)} />
         )}
         {screen === AppScreen.GAMES && (
           <GameHub words={titanLibrary} onBack={() => setScreen(AppScreen.DASHBOARD)} onXP={(amount) => setProgress(p => p ? ({...p, xp: p.xp + amount}) : p)} />
@@ -164,7 +161,7 @@ const App: React.FC = () => {
         )}
       </main>
       
-      <footer className="bg-slate-950 p-4 border-t border-white/5 text-[8px] font-black uppercase tracking-widest text-slate-600 text-center">
+      <footer className="bg-slate-950 p-6 border-t border-white/5 text-[10px] font-black uppercase tracking-[0.5em] text-slate-700 text-center">
         Titan Logic Engine v{CURRENT_VERSION}
       </footer>
     </div>
