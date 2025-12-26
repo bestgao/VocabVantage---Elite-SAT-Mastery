@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+<<<<<<< HEAD
 import { getTutorResponse, connectLiveTutor, decode, decodeAudioData, encode } from '../services/gemini';
+=======
+import { getTutorResponse, connectLiveTutor, decode, decodeAudioData } from '../services/gemini';
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
 import { LiveServerMessage } from '@google/genai';
 
 interface Message {
@@ -102,8 +106,12 @@ const AITutor: React.FC<AITutorProps> = ({ onBack }) => {
             const int16 = new Int16Array(l);
             for (let i = 0; i < l; i++) int16[i] = inputData[i] * 32768;
             
+<<<<<<< HEAD
             // Fixed: Use encode utility to safely convert audio bytes to base64
             const pcmBase64 = encode(new Uint8Array(int16.buffer));
+=======
+            const pcmBase64 = btoa(String.fromCharCode(...new Uint8Array(int16.buffer)));
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
             sessionPromiseRef.current?.then(session => {
               session.sendRealtimeInput({
                 media: { data: pcmBase64, mimeType: 'audio/pcm;rate=16000' }

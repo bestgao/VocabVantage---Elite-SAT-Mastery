@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 import React, { useState } from 'react';
 import { UserProgress, AppScreen } from '../types';
 import { validateSystemConnection } from '../services/gemini';
@@ -16,12 +17,20 @@ const getEncouragement = () => {
   ];
   return messages[Math.floor(Math.random() * messages.length)];
 };
+=======
+import React from 'react';
+import { UserProgress, AppScreen } from '../types';
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
 
 interface DashboardProps {
   progress: UserProgress;
   onNavigate: (screen: AppScreen) => void;
   onQuickStart: () => void;
+<<<<<<< HEAD
   onDiscover: () => void; 
+=======
+  onDiscover: () => void;
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
   isDiscovering: boolean;
   onClaim: () => number;
   onUpgrade: () => void;
@@ -31,7 +40,11 @@ interface DashboardProps {
   onUpdateGoal: (goal: number) => void;
 }
 
+<<<<<<< HEAD
 const Dashboard: React.FC<DashboardProps> = ({ progress, onNavigate, onUpdateGoal, onQuickStart, onDiscover, onImportSync }) => {
+=======
+const Dashboard: React.FC<DashboardProps> = ({ progress, onNavigate, onUpdateGoal, onQuickStart }) => {
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
   const todayKey = new Date().toISOString().split('T')[0];
   const todayMasteredCount = progress.dailyMasteryProgress[todayKey] || 0;
   const todayReviewedCount = progress.dailyReviewedProgress[todayKey] || 0;
@@ -39,6 +52,7 @@ const Dashboard: React.FC<DashboardProps> = ({ progress, onNavigate, onUpdateGoa
   const isOverdrive = todayMasteredCount >= plan;
   const goalPercent = Math.min((todayMasteredCount / plan) * 100, 100);
   
+<<<<<<< HEAD
   const [diagStatus, setDiagStatus] = useState<{ status: string, message: string } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
 
@@ -52,6 +66,8 @@ const Dashboard: React.FC<DashboardProps> = ({ progress, onNavigate, onUpdateGoa
     setIsTesting(false);
   };
   
+=======
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
   const historyDays = [...Array(14)].map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - i);
@@ -65,6 +81,7 @@ const Dashboard: React.FC<DashboardProps> = ({ progress, onNavigate, onUpdateGoa
     };
   });
 
+<<<<<<< HEAD
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -73,10 +90,20 @@ const Dashboard: React.FC<DashboardProps> = ({ progress, onNavigate, onUpdateGoa
       if (event.target?.result) onImportSync(event.target.result as string);
     };
     reader.readAsText(file);
+=======
+  const getEncouragement = () => {
+    if (todayMasteredCount === 0 && todayReviewedCount > 0) return "Active data intake detected. Lock in your mastery!";
+    if (todayMasteredCount === 0) return "Neural repository online. Commencement recommended.";
+    if (todayMasteredCount < plan) return "Momentum building. Daily objective in reach!";
+    if (todayMasteredCount === plan) return "Objective Secured ✨ Goal reached for today.";
+    if (todayMasteredCount > plan * 1.5) return "ASCENDANT: You are exceeding your cognitive plan!";
+    return "OVERDRIVE: Exceptional discipline recognized.";
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
   };
 
   return (
     <div className="space-y-12 animate-in fade-in duration-700 pb-24">
+<<<<<<< HEAD
       <div className="flex flex-wrap justify-between items-center -mb-8 px-6 gap-4">
          <div className="flex items-center gap-3">
             {/* DIAGNOSTIC BUTTON */}
@@ -112,6 +139,9 @@ const Dashboard: React.FC<DashboardProps> = ({ progress, onNavigate, onUpdateGoa
          </div>
       </div>
 
+=======
+      {/* --- ELITE STATUS OVERVIEW --- */}
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
       <section className="bg-slate-950 rounded-[4.5rem] p-10 md:p-14 text-white relative overflow-hidden shadow-[0_35px_60px_-15px_rgba(99,102,241,0.35)] border-b-8 border-indigo-600">
         <div className="absolute top-0 right-0 w-[55rem] h-[55rem] bg-indigo-500/10 rounded-full -mr-64 -mt-64 blur-[130px]"></div>
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -212,6 +242,10 @@ const Dashboard: React.FC<DashboardProps> = ({ progress, onNavigate, onUpdateGoa
         </div>
       </section>
 
+<<<<<<< HEAD
+=======
+      {/* --- DAILY EFFORT LOG --- */}
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
       <section className="space-y-8">
         <div className="flex justify-between items-end px-6">
            <h2 className="text-4xl font-black text-slate-900 tracking-tight">Intelligence Ledger</h2>
@@ -255,6 +289,10 @@ const Dashboard: React.FC<DashboardProps> = ({ progress, onNavigate, onUpdateGoa
         </div>
       </section>
 
+<<<<<<< HEAD
+=======
+      {/* QUICK LINKS */}
+>>>>>>> 42d8b822d4898685e99734be5fcc95b82cace9e9
       <section className="grid grid-cols-1 md:grid-cols-3 gap-10">
         <div className="bg-white p-14 rounded-[4.5rem] border border-slate-100 shadow-lg flex flex-col justify-between hover:shadow-2xl transition-all border-b-8 border-indigo-100 group">
           <div>
