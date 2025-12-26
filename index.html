@@ -8,32 +8,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#020617" />
     
-    <title>VocabVantage v2.1 - Obsidian Elite</title>
+    <title>VocabVantage v2.7.2 - Titan Core</title>
     
     <script>
       /**
-       * VERSION 2.1 - OBSIDIAN ELITE
-       * Passive cache management: Clears storage on mismatch but avoids window.location redirects
-       * to ensure compatibility with sandboxed preview environments.
+       * VERSION 2.7.2 - PERSISTENCE UPDATE
+       * Removed localStorage.clear() to ensure user word banks persist across sessions.
        */
       (function() {
-        const VERSION = '2.1.0';
-        const STORAGE_KEY = 'vv_version_v2_1';
+        const VERSION = '2.7.2';
+        const STORAGE_KEY = 'vv_version_v2_7';
         const current = localStorage.getItem(STORAGE_KEY);
 
         if (current !== VERSION) {
-          console.log('V2.1: Initializing clean state...');
-          localStorage.clear();
-          sessionStorage.clear();
+          console.log('V2.7.2: Update detected. Migrating storage safely...');
           localStorage.setItem(STORAGE_KEY, VERSION);
-          
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-              for(let registration of registrations) {
-                registration.unregister();
-              }
-            });
-          }
         }
       })();
     </script>
@@ -90,12 +79,9 @@
   }
 }
 </script>
-  <link rel="stylesheet" href="/index.css">
-</head>
+  </head>
   <body>
     <div id="root"></div>
-    <!-- Forced cache-busted module load -->
-    <script type="module" src="index.tsx?v=2.1.0-obsidian-elite"></script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="index.tsx?v=2.7.2"></script>
+  </body>
 </html>
