@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Word, MasteryLevel } from '../types';
 import { generateSATQuestion, generateWordImage, generateSpeech, decode, decodeAudioData, fetchSynonymsAndMnemonics } from '../services/gemini';
 import { MASTERY_COLORS } from '../constants';
@@ -20,6 +20,7 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
   const [satQ, setSatQ] = useState<any>(null);
   const [img, setImg] = useState<string | null>(null);
   const [ans, setAns] = useState<number | null>(null);
+  const [confetti, setConfetti] = useState<boolean>(false);
 
   const word = words[currentIndex];
   const level = currentMastery[word.id] ?? 0;
@@ -32,7 +33,13 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
     setAns(null); 
   }, [currentIndex]);
 
+  const triggerConfetti = () => {
+    setConfetti(true);
+    setTimeout(() => setConfetti(false), 3000);
+  };
+
   const handleLevel = (lvl: MasteryLevel) => { 
+    if (lvl === 3 && level < 3) triggerConfetti();
     onWordUpdate(word.id, lvl); 
     currentIndex < words.length - 1 ? setCurrentIndex(prev => prev + 1) : onBack(); 
   };
@@ -83,10 +90,25 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
   };
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col min-h-[85vh] pb-24">
+    <div className="max-w-2xl mx-auto flex flex-col min-h-[85vh] pb-24 relative">
+      {confetti && [...Array(30)].map((_, i) => (
+        <div 
+          key={i} 
+          className="confetti" 
+          style={{ 
+            left: `${Math.random() * 100}vw`, 
+            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ec4899'][Math.floor(Math.random() * 4)],
+            animationDelay: `${Math.random() * 2}s`
+          }} 
+        />
+      ))}
+
       <header className="flex justify-between items-center mb-6">
         <button onClick={onBack} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">← Exit Lab</button>
-        <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{currentIndex + 1} / {words.length}</span>
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{currentIndex + 1} / {words.length}</span>
+          <p className="text-[8px] font-bold text-slate-300 uppercase mt-1 tracking-tighter">Current mastery: Lvl {level + 1}</p>
+        </div>
       </header>
 
       <div className="relative flex-1 perspective-1000">
@@ -104,15 +126,16 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
             {img ? (
               <img src={img} className="w-full h-64 object-cover rounded-3xl mb-8 animate-in zoom-in-95" />
             ) : (
-              <div className="w-20 h-20 mb-8 bg-slate-50 rounded-full flex items-center justify-center text-3xl opacity-20">📦</div>
+              <div className="w-24 h-24 mb-8 bg-slate-50 rounded-full flex items-center justify-center text-4xl opacity-20 group-hover:opacity-40 transition-opacity">📦</div>
             )}
             
             <h2 className={`text-7xl font-black text-center tracking-tighter mb-4 ${config.text}`}>{word.term}</h2>
             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">[{word.partOfSpeech}]</p>
             
             {word.mnemonic && (
-               <div className="mt-8 p-4 bg-amber-50 rounded-2xl text-amber-800 text-xs font-bold text-center italic border border-amber-100 max-w-xs animate-in fade-in slide-in-from-bottom-2">
-                 "Mnemonics: {word.mnemonic}"
+               <div className="mt-8 p-6 bg-amber-50 rounded-[2rem] text-amber-800 text-xs font-bold text-center italic border border-amber-100 max-w-xs animate-in fade-in slide-in-from-bottom-4">
+                 <span className="block text-[8px] uppercase not-italic mb-1 opacity-50 tracking-widest">Neural Mnemonic</span>
+                 "{word.mnemonic}"
                </div>
             )}
           </div>
@@ -131,7 +154,7 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 animate-in fade-in">
                     <p className="text-[10px] font-black uppercase text-indigo-500 mb-2">Neural Explanation</p>
                     <p className="text-xs italic text-slate-600 leading-relaxed">{satQ.explanation}</p>
-                    <button onClick={() => setSatQ(null)} className="mt-4 text-[10px] font-black uppercase text-slate-400">Next Word Preview</button>
+                    <button onClick={() => setSatQ(null)} className="mt-4 text-[10px] font-black uppercase text-slate-400 font-bold hover:text-slate-900">Next Word Preview</button>
                   </div>
                 )}
               </div>
@@ -147,12 +170,15 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
                 </div>
 
                 {word.synonyms && word.synonyms.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {word.synonyms.map((s, i) => (
-                      <span key={i} className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-tight">
-                        {s}
-                      </span>
-                    ))}
+                  <div className="space-y-3">
+                    <p className="text-[8px] font-black uppercase text-slate-300 tracking-widest">Neural Synonyms</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {word.synonyms.map((s, i) => (
+                        <span key={i} className="px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-tight border border-indigo-100">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -169,7 +195,7 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
                       {loadingAI ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div> : 'Neural Drill ⚡'}
                     </button>
                   </div>
-                  <button onClick={() => setIsFlipped(false)} className="w-full py-4 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600">Back to Term</button>
+                  <button onClick={() => setIsFlipped(false)} className="w-full py-4 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600 transition-colors">Back to Term</button>
                 </div>
               </div>
             )}
@@ -182,9 +208,9 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
           <button 
             key={lvl} 
             onClick={() => handleLevel(lvl as MasteryLevel)} 
-            className={`py-6 rounded-[2rem] border-2 transition-all group ${level === lvl ? 'bg-slate-950 border-slate-950 text-white shadow-xl shadow-slate-200' : 'bg-white border-slate-100 hover:border-slate-300'}`}
+            className={`py-6 rounded-[2rem] border-2 transition-all group ${level === lvl ? 'bg-slate-950 border-slate-950 text-white shadow-xl shadow-indigo-200/20 scale-105' : 'bg-white border-slate-100 hover:border-slate-300'}`}
           >
-            <div className={`w-2 h-2 rounded-full mx-auto mb-2 ${level === lvl ? 'bg-white' : MASTERY_COLORS[lvl as MasteryLevel].text.replace('text-', 'bg-')}`}></div>
+            <div className={`w-2 h-2 rounded-full mx-auto mb-2 ${level === lvl ? 'bg-white animate-pulse' : MASTERY_COLORS[lvl as MasteryLevel].text.replace('text-', 'bg-')}`}></div>
             <span className="text-[10px] font-black uppercase tracking-widest">{MASTERY_COLORS[lvl as MasteryLevel].label.split(': ')[1]}</span>
           </button>
         ))}

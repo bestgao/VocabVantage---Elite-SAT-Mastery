@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#020617" />
     
-    <title>VocabVantage v2.8.1 - Titan Edition</title>
+    <title>VocabVantage v2.8.3 - Stable</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -33,6 +33,20 @@
       }
       .animate-titan { animation: titan-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
       
+      @keyframes confetti-fall {
+        0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+      }
+      .confetti {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background-color: #6366f1;
+        top: -10px;
+        z-index: 1000;
+        animation: confetti-fall 3s linear forwards;
+      }
+
       button:active { transform: scale(0.96); }
     </style>
     <script type="importmap">
@@ -47,15 +61,11 @@
   }
 }
 </script>
-  </head>
+  <link rel="stylesheet" href="/index.css">
+</head>
   <body>
     <div id="root"></div>
-<<<<<<< HEAD
-    <script type="module" src="index.tsx?v=2.8.1"></script>
+    <script type="module" src="index.tsx?v=2.8.3"></script>
   <script type="module" src="/index.tsx"></script>
 </body>
-=======
-    <script type="module" src="index.tsx?v=2.8.0"></script>
-  </body>
->>>>>>> 671b07d263623ace96a6caa850fcfec07c487a2c
 </html>
