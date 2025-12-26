@@ -89,8 +89,18 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
     } 
   };
 
+  const progressPercent = ((currentIndex + 1) / words.length) * 100;
+
   return (
     <div className="max-w-2xl mx-auto flex flex-col min-h-[85vh] pb-24 relative">
+      {/* Session Progress Bar */}
+      <div className="fixed top-20 left-0 right-0 h-1 bg-slate-200 z-[40]">
+        <div 
+          className="h-full bg-indigo-600 transition-all duration-500 ease-out progress-shimmer"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+
       {confetti && [...Array(30)].map((_, i) => (
         <div 
           key={i} 
@@ -103,7 +113,7 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
         />
       ))}
 
-      <header className="flex justify-between items-center mb-6">
+      <header className="flex justify-between items-center mb-6 pt-4">
         <button onClick={onBack} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">← Exit Lab</button>
         <div className="flex flex-col items-center">
           <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{currentIndex + 1} / {words.length}</span>

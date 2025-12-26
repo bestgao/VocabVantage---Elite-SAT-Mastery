@@ -13,8 +13,8 @@ import Leaderboard from './components/Leaderboard';
 import RewardStore from './components/RewardStore';
 import MedalGallery from './components/MedalGallery';
 
-const CURRENT_VERSION = '2.8.3';
-const STORAGE_KEY = 'vv_unified_vault_production';
+const CURRENT_VERSION = '2.8.4';
+const STORAGE_KEY = 'vv_unified_vault_production_v2';
 
 const App: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>(AppScreen.DASHBOARD);
@@ -26,7 +26,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
-      const mainStore = localStorage.getItem(STORAGE_KEY);
+      const mainStore = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('vv_unified_vault_production');
       let savedData: any = mainStore ? JSON.parse(mainStore) : null;
 
       const initialProgress: UserProgress = savedData?.progress || {
@@ -50,7 +50,6 @@ const App: React.FC = () => {
       setProgress(initialProgress);
       setIsInitializing(false);
 
-      // System Health Check
       const check = await validateSystemConnection();
       setAiStatus(check.status === 'online' ? 'online' : 'offline');
     };
@@ -90,14 +89,25 @@ const App: React.FC = () => {
   }, []);
 
   const handleQuickStart = () => {
-    const pool = titanLibrary.flatMap(w => {
+    // Weighted selection: Unmastered words are 3x more likely to appear
+    const pool: Word[] = [];
+    titanLibrary.forEach(w => {
       const m = progress?.wordMastery[w.id] || 0;
-      return Array(4 - m).fill(w);
+      if (m === 3) {
+        pool.push(w); // Mastered: 1 entry
+      } else {
+        // Not mastered: 3 entries
+        pool.push(w, w, w);
+      }
     });
+
     const unique = new Set<Word>();
-    while(unique.size < 15 && pool.length > 0) {
-      unique.add(pool[Math.floor(Math.random() * pool.length)]);
+    const maxSession = Math.min(15, titanLibrary.length);
+    while(unique.size < maxSession && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      unique.add(pool[idx]);
     }
+    
     setSessionWords(Array.from(unique));
     setScreen(AppScreen.LEARN);
   };

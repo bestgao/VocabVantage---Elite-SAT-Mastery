@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#020617" />
     
-    <title>VocabVantage v2.8.3 - Stable</title>
+    <title>VocabVantage v2.8.4 - Vanguard</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -48,6 +48,16 @@
       }
 
       button:active { transform: scale(0.96); }
+      
+      .progress-shimmer {
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        background-size: 200% 100%;
+        animation: progress-shimmer 2s infinite linear;
+      }
+      @keyframes progress-shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
     </style>
     <script type="importmap">
 {
@@ -61,11 +71,9 @@
   }
 }
 </script>
-  <link rel="stylesheet" href="/index.css">
-</head>
+  </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="index.tsx?v=2.8.3"></script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="index.tsx?v=2.8.4"></script>
+  </body>
 </html>
