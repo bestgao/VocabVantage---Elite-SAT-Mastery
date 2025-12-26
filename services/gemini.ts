@@ -1,121 +1,156 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Word } from "../types";
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
- * Enriches a batch of words by replacing generic placeholders with high-quality SAT examples.
+ * Diagnostic: Validates if the current API_KEY is functional.
  */
-export const enrichContextualExamples = async (words: Word[]): Promise<Word[]> => {
-  const ai = getAI();
-  const prompt = `You are an SAT curriculum developer. For the following list of words, generate a high-quality, sophisticated SAT-style example sentence for each. 
-  Ensure the sentence is unique and provides enough context to deduce the meaning. 
-  
-  Words: ${words.map(w => `${w.term} (${w.definition})`).join('; ')}
-  
-  Return a JSON array of strings, where each string is the new example sentence for the corresponding word in order.`;
-
+export const validateSystemConnection = async (): Promise<{ status: 'online' | 'offline', message: string }> => {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING }
-        }
-      }
+      contents: 'ping',
     });
-
-    const newExamples = JSON.parse(response.text || "[]");
-    return words.map((w, i) => ({
-      ...w,
-      example: newExamples[i] || w.example
-    }));
-  } catch (e) {
-    console.error("Enrichment failed for batch", e);
-    return words;
+    if (response.text) {
+      return { status: 'online', message: 'Neural Link Established' };
+    }
+    return { status: 'offline', message: 'No Response from Core' };
+  } catch (e: any) {
+    console.error("Diagnostic Fail:", e);
+    return { status: 'offline', message: e.message || 'Authentication Failed' };
   }
 };
 
 /**
- * Generates an SAT-style multiple choice question for a specific word to be used in AI Drill mode.
- * Fixes the missing export required by Flashcards.tsx.
+ * Generates an ELITE level SAT Reading & Writing question using Gemini 3 Pro's thinking capabilities.
  */
-export const generateSATQuestion = async (word: string, definition: string): Promise<{ q: string, options: string[], correct: number }> => {
-  const ai = getAI();
+export const generateSATQuestion = async (word: string, definition: string) => {
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Generate a sophisticated SAT-style multiple choice question for the word "${word}" (${definition}). 
-    Include one correct option and three plausible distractors. 
-    Return as JSON with fields: question, options (array of 4 strings), and correctIndex (0-3).`,
+    model: 'gemini-3-pro-preview',
+    contents: `Create an ELITE level SAT Reading & Writing question for the word "${word}" (${definition}). 
+    The question should be a "Words in Context" style paragraph where the student chooses the best word to fit.
+    Distractors must be high-level SAT words that are contextually plausible but technically incorrect.
+    Provide a detailed linguistic explanation of why the correct choice is superior to the distractors.
+    JSON ONLY.`,
     config: {
+      thinkingConfig: { thinkingBudget: 2000 },
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
           question: { type: Type.STRING },
           options: { type: Type.ARRAY, items: { type: Type.STRING } },
-          correctIndex: { type: Type.NUMBER }
+          correctIndex: { type: Type.NUMBER },
+          explanation: { type: Type.STRING }
         },
-        required: ["question", "options", "correctIndex"]
+        required: ["question", "options", "correctIndex", "explanation"]
       }
     }
   });
-
-  try {
-    const data = JSON.parse(response.text || "{}");
-    return {
-      q: data.question || `What is the most accurate definition of the word "${word}"?`,
-      options: data.options || [definition, "To simplify a complex idea", "To ignore minor details", "To repeat a previous action"],
-      correct: data.correctIndex ?? 0
-    };
-  } catch (e) {
-    return {
-      q: `What is the most accurate definition of the word "${word}"?`,
-      options: [definition, "To simplify a complex idea", "To ignore minor details", "To repeat a previous action"],
-      correct: 0
-    };
-  }
+  return JSON.parse(response.text || "{}");
 };
 
-export const generateMnemonic = async (word: string, definition: string): Promise<string> => {
-  const ai = getAI();
+/**
+ * Generates an artistic visual metaphor for the word using Gemini 2.5 Flash Image.
+ */
+export const generateWordImage = async (word: string, definition: string) => {
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Create a memorable, funny, or clever mnemonic for the SAT word "${word}" (${definition}).`
-  });
-  return response.text || "No mnemonic found.";
-};
-
-export const getRealWorldUsage = async (word: string): Promise<{ text: string, links: { title: string, uri: string }[] }> => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Find a recent news article or high-quality web snippet that uses the SAT vocabulary word "${word}" in a sophisticated context.`,
-    config: { tools: [{ googleSearch: {} }] },
-  });
-
-  const text = response.text || "Searching for live examples...";
-  const links: { title: string, uri: string }[] = [];
-  const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-  if (chunks) {
-    chunks.forEach((chunk: any) => {
-      if (chunk.web && chunk.web.uri) {
-        links.push({ title: chunk.web.title || "Source Article", uri: chunk.web.uri });
+    model: 'gemini-2.5-flash-image',
+    contents: { 
+      parts: [{ 
+        text: `A high-concept, minimalist 3D render representing the SAT vocabulary word "${word}" (${definition}). 
+        Use a cinematic indigo and gold lighting scheme. Avoid any text. Focus on an abstract but clear visual metaphor.` 
+      }] 
+    },
+    config: {
+      imageConfig: {
+        aspectRatio: "1:1"
       }
-    });
-  }
-  return { text, links };
+    }
+  });
+  
+  const imagePart = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
+  return imagePart ? `data:image/png;base64,${imagePart.inlineData.data}` : null;
 };
 
-export const discoverWords = async (existingWords: string[]): Promise<Word[]> => {
-  const ai = getAI();
+/**
+ * Text-to-Speech using Gemini 2.5 Flash TTS.
+ */
+export const generateSpeech = async (text: string): Promise<string> => {
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: [{ parts: [{ text }] }],
+    config: {
+      responseModalities: [Modality.AUDIO],
+      speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+    },
+  });
+  return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
+};
+
+/**
+ * AI Tutor chat response.
+ */
+export const getTutorResponse = async (history: { role: 'user' | 'model', text: string }[], input: string) => {
+  const contents = history.map(h => ({
+    role: h.role,
+    parts: [{ text: h.text }]
+  }));
+  contents.push({ role: 'user', parts: [{ text: input }] });
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents,
+    config: {
+      systemInstruction: 'You are an expert SAT tutor. Provide precise, actionable advice on vocabulary and grammar.'
+    }
+  });
+  return response.text || "Connection error. Please try again.";
+};
+
+/**
+ * Connect to Gemini Live API for voice-based practice.
+ */
+export const connectLiveTutor = (callbacks: {
+  onopen: () => void;
+  onmessage: (message: any) => void;
+  onerror: (e: any) => void;
+  onclose: (e: any) => void;
+}) => {
+  return ai.live.connect({
+    model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+    callbacks,
+    config: {
+      responseModalities: [Modality.AUDIO],
+      systemInstruction: 'You are a supportive SAT verbal coach. Engage in voice conversation to help the student learn new words.',
+    }
+  });
+};
+
+export const generateOddOneOutExplanation = async (options: string[], oddWord: string) => {
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `Analyze: ${options.join(', ')}. The outlier is "${oddWord}". Explain the shared theme of the others. JSON ONLY.`,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          relationship: { type: Type.STRING },
+          explanation: { type: Type.STRING }
+        },
+        required: ["relationship", "explanation"]
+      }
+    }
+  });
+  return JSON.parse(response.text || "{}");
+};
+
+export const generateDynamicSyntaxChallenges = async (count: number) => {
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
-    contents: `Generate 50 unique high-frequency SAT words NOT in: ${existingWords.slice(0, 100).join(', ')}. Format as JSON.`,
+    contents: `Generate ${count} high-level SAT Writing syntax challenges. JSON ONLY.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -123,43 +158,42 @@ export const discoverWords = async (existingWords: string[]): Promise<Word[]> =>
         items: {
           type: Type.OBJECT,
           properties: {
-            term: { type: Type.STRING },
-            definition: { type: Type.STRING },
-            partOfSpeech: { type: Type.STRING },
-            example: { type: Type.STRING },
-            synonyms: { type: Type.ARRAY, items: { type: Type.STRING } }
+            text: { type: Type.STRING },
+            options: { type: Type.ARRAY, items: { type: Type.STRING } },
+            errorIndex: { type: Type.NUMBER },
+            correction: { type: Type.STRING },
+            corrected_text: { type: Type.STRING },
+            rule: { type: Type.STRING }
           },
-          required: ["term", "definition", "partOfSpeech", "example", "synonyms"]
+          required: ["text", "options", "errorIndex", "correction", "corrected_text", "rule"]
         }
       }
     }
   });
-  try {
-    return JSON.parse(response.text || "[]").map((w: any, i: number) => ({ ...w, id: `dis-${Date.now()}-${i}`, satLevel: 'Medium', frequencyTier: 'Mid' }));
-  } catch (e) { return []; }
+  return JSON.parse(response.text || "[]");
 };
 
-export const getTutorResponse = async (history: any[], message: string): Promise<string> => {
-  const ai = getAI();
-  const chat = ai.chats.create({
-    model: 'gemini-3-flash-preview',
-    history: history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-    config: { systemInstruction: 'You are an SAT tutor expert in vocabulary.' }
-  });
-  const response = await chat.sendMessage({ message });
-  return response.text || "Error.";
-};
+export function encode(bytes: Uint8Array): string {
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
 
-export const generateWordImage = async (word: string, definition: string): Promise<string> => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: `Metaphorical illustration of "${word}" (${definition}). No text.` }] },
-  });
-  if (response.candidates?.[0]?.content?.parts) {
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
-    }
+export function decode(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+  return bytes;
+}
+
+export async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
   }
-  throw new Error("Image failed.");
-};
+  return buffer;
+}
