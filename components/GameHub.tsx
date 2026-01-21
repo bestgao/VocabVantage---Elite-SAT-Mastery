@@ -29,10 +29,8 @@ const GameHub: React.FC<GameHubProps> = ({ words, onBack, onXP }) => {
   ];
 
   if (activeGame === 'speed') return <SpeedBlitz words={words} onBack={() => setActiveGame(null)} onXP={(xp) => onXP(xp, 'speed', 10)} />;
-  // Removed words prop as MatchManiaProps does not define it
-  if (activeGame === 'match') return <MatchMania onBack={() => setActiveGame(null)} onXP={(xp) => onXP(xp, 'match', 100)} />;
-  // Removed words prop as VisualVibeProps does not define it
-  if (activeGame === 'visual') return <VisualVibe onBack={() => setActiveGame(null)} onXP={(xp) => onXP(xp, 'visual', 100)} />;
+  if (activeGame === 'match') return <MatchMania words={words} onBack={() => setActiveGame(null)} onXP={(xp) => onXP(xp, 'match', 100)} />;
+  if (activeGame === 'visual') return <VisualVibe words={words} onBack={() => setActiveGame(null)} onXP={(xp) => onXP(xp, 'visual', 100)} />;
   if (activeGame === 'synonym') return <SynonymSprint words={words} onBack={() => setActiveGame(null)} onXP={onXP} />;
   if (activeGame === 'oddout') return <OddOneOut words={words} onBack={() => setActiveGame(null)} onXP={onXP} />;
   if (activeGame === 'transition') return <TransitionTussle onBack={() => setActiveGame(null)} onXP={onXP} />;
@@ -41,8 +39,8 @@ const GameHub: React.FC<GameHubProps> = ({ words, onBack, onXP }) => {
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-10 duration-500 pb-12">
       <header className="text-center space-y-2">
-        <h2 className="text-4xl font-black text-slate-900 tracking-tight">Game Center</h2>
-        <p className="text-slate-500 font-medium">Use your {words.length.toLocaleString()} vault assets for training.</p>
+        <h2 className="text-4xl font-black text-slate-900 tracking-tight uppercase italic">Neural <span className="text-indigo-600">Arena</span></h2>
+        <p className="text-slate-500 font-medium">Infinite permutations generated from {words.length.toLocaleString()} local assets.</p>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -55,11 +53,14 @@ const GameHub: React.FC<GameHubProps> = ({ words, onBack, onXP }) => {
             <div className="text-5xl mb-6 group-hover:scale-110 transition-transform inline-block">{game.icon}</div>
             <h3 className={`text-2xl font-black mb-2 ${game.text}`}>{game.title}</h3>
             <p className="text-slate-600 text-sm font-medium leading-relaxed">{game.desc}</p>
+            {game.tag && (
+              <span className="absolute top-6 right-6 px-3 py-1 bg-white/60 rounded-full text-[8px] font-black uppercase tracking-widest text-slate-400 border border-slate-100">{game.tag}</span>
+            )}
           </button>
         ))}
       </div>
       <div className="text-center pt-8">
-        <button onClick={onBack} className="text-slate-400 font-bold hover:text-slate-900">Back to Dashboard</button>
+        <button onClick={onBack} className="text-slate-400 font-black uppercase tracking-widest hover:text-slate-900 transition-colors bg-white px-8 py-3 rounded-full border border-slate-100 shadow-sm text-[10px]">Back to Dashboard</button>
       </div>
     </div>
   );

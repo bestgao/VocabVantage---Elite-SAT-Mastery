@@ -1,80 +1,77 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Word } from "../types";
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+const isAIEnabled = !!process.env.API_KEY; 
+
+export const isSystemAIEnabled = () => isAIEnabled;
 
 export const validateSystemConnection = async (): Promise<{ status: 'online' | 'offline', message: string }> => {
+  if (!isAIEnabled) return { status: 'offline', message: 'Local Mode Active' };
   try {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: 'ping',
     });
     return response.text ? { status: 'online', message: 'Neural Link Established' } : { status: 'offline', message: 'No Response' };
   } catch (e: any) {
-    return { status: 'offline', message: e.message || 'Auth Failed' };
+    return { status: 'offline', message: 'Auth Failed' };
   }
 };
 
-export const fetchSynonymsAndMnemonics = async (word: string, definition: string) => {
-  const ai = getAI();
+export const fetchSynonymsAndMnemonics = async (word: string, currentDefinition: string) => {
+  if (!isAIEnabled) throw new Error("AI disabled. Please check your configuration.");
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Generate 3 high-level SAT synonyms and 1 memorable mnemonic for "${word}" (${definition}). JSON ONLY.`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          synonyms: { type: Type.ARRAY, items: { type: Type.STRING } },
-          mnemonic: { type: Type.STRING }
-        },
-        required: ["synonyms", "mnemonic"]
-      }
-    }
+    contents: `Expand definition for "${word}". Current definition: "${currentDefinition}". Return JSON with synonyms and mnemonic.`,
+    config: { responseMimeType: "application/json" }
   });
   return JSON.parse(response.text || "{}");
 };
 
 export const generateSATQuestion = async (word: string, definition: string) => {
-  const ai = getAI();
+  if (!isAIEnabled) return null;
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: `Create an ELITE level SAT Reading & Writing question for "${word}" (${definition}). 
-    Provide distractors that are high-level SAT words. JSON ONLY.`,
-    config: {
-      thinkingConfig: { thinkingBudget: 2000 },
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          question: { type: Type.STRING },
-          options: { type: Type.ARRAY, items: { type: Type.STRING } },
-          correctIndex: { type: Type.NUMBER },
-          explanation: { type: Type.STRING }
-        },
-        required: ["question", "options", "correctIndex", "explanation"]
-      }
-    }
+    model: 'gemini-3-flash-preview',
+    contents: `Generate an SAT-style multiple-choice question for the word "${word}" which means "${definition}". Return JSON format.`,
+    config: { responseMimeType: "application/json" }
   });
   return JSON.parse(response.text || "{}");
 };
 
 export const generateWordImage = async (word: string, definition: string) => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: { 
-      parts: [{ text: `Minimalist 3D render representing the SAT word "${word}" (${definition}). Cinematic indigo lighting.` }] 
-    },
-    config: { imageConfig: { aspectRatio: "1:1" } }
-  });
-  const imagePart = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
-  return imagePart ? `data:image/png;base64,${imagePart.inlineData.data}` : null;
+  if (!isAIEnabled) return null;
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [
+          {
+            text: `High-quality educational illustration for the vocabulary word "${word}" (${definition}). Clean, professional style suitable for a study app.`,
+          },
+        ],
+      },
+    });
+    
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error("Image generation failed:", e);
+    return null;
+  }
 };
 
 export const generateSpeech = async (text: string): Promise<string> => {
-  const ai = getAI();
+  if (!isAIEnabled) return ""; 
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-preview-tts",
     contents: [{ parts: [{ text }] }],
@@ -86,33 +83,77 @@ export const generateSpeech = async (text: string): Promise<string> => {
   return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
 };
 
-export const getTutorResponse = async (history: { role: 'user' | 'model', text: string }[], input: string) => {
-  const ai = getAI();
-  const contents = history.map(h => ({ role: h.role, parts: [{ text: h.text }] }));
-  contents.push({ role: 'user', parts: [{ text: input }] });
+export const generateDynamicSyntaxChallenges = async (count: number = 5) => {
+  if (!isAIEnabled) return [];
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents,
-    config: { systemInstruction: 'You are an expert SAT tutor. Be concise but insightful.' }
-  });
-  return response.text || "Connection error. Please check your network.";
-};
-
-export const connectLiveTutor = (callbacks: {
-  onopen: () => void;
-  onmessage: (message: any) => void;
-  onerror: (e: any) => void;
-  onclose: (e: any) => void;
-}) => {
-  const ai = getAI();
-  return ai.live.connect({
-    model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-    callbacks,
+    contents: `Generate ${count} SAT-style syntax challenges. Each challenge should have a sentence where one part in brackets is grammatically incorrect. Return JSON. The 'explanation' field must be a specific, detailed pedagogical reason why that specific part is wrong in the context of the sentence.`,
     config: {
-      responseModalities: [Modality.AUDIO],
-      systemInstruction: 'You are a supportive SAT verbal coach. Use voice to help the student learn.',
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            text: {
+              type: Type.STRING,
+              description: 'Sentence with bracketed options, e.g., "The researcher [conducts] the study; [however] they [hadnt] find [any] results."'
+            },
+            options: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: 'The phrases inside brackets'
+            },
+            errorIndex: {
+              type: Type.NUMBER,
+              description: 'Index of the incorrect option (0-indexed)'
+            },
+            correction: {
+              type: Type.STRING,
+              description: 'Corrected version of the error'
+            },
+            corrected_text: {
+              type: Type.STRING,
+              description: 'The full sentence with the error fixed'
+            },
+            rule: {
+              type: Type.STRING,
+              description: 'Grammar rule violated (e.g., "Subject-Verb Agreement")'
+            },
+            explanation: {
+              type: Type.STRING,
+              description: 'Detailed, specific explanation of why this error is wrong in this specific sentence.'
+            }
+          },
+          propertyOrdering: ["text", "options", "errorIndex", "correction", "corrected_text", "rule", "explanation"]
+        }
+      }
     }
   });
+  try {
+    return JSON.parse(response.text || "[]");
+  } catch (e) {
+    console.error("Syntax challenge generation failed:", e);
+    return [];
+  }
+};
+
+export const getTutorResponse = async (history: any[], input: string) => {
+  if (!isAIEnabled) return "AI Tutor is currently in development for Version 2.0. Please use the Local Bank for now.";
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-pro-preview',
+    contents: `You are a helpful SAT tutor. History: ${JSON.stringify(history)}. User input: ${input}`,
+    config: {
+      systemInstruction: "You are a specialized SAT Verbal tutor. Be concise, encouraging, and highly accurate with grammar rules."
+    }
+  });
+  return response.text || "I'm having trouble connecting to my neural link. Please try again.";
+};
+
+export const connectLiveTutor = (callbacks: any) => {
+  return null;
 };
 
 export function encode(bytes: Uint8Array): string {
@@ -138,47 +179,3 @@ export async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampl
   }
   return buffer;
 }
-
-export const generateOddOneOutExplanation = async (options: string[], oddWord: string) => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Analyze: ${options.join(', ')}. Outlier: "${oddWord}". JSON ONLY.`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: { relationship: { type: Type.STRING }, explanation: { type: Type.STRING } },
-        required: ["relationship", "explanation"]
-      }
-    }
-  });
-  return JSON.parse(response.text || "{}");
-};
-
-export const generateDynamicSyntaxChallenges = async (count: number) => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: `Generate ${count} high-level SAT Writing syntax challenges. JSON ONLY.`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            text: { type: Type.STRING },
-            options: { type: Type.ARRAY, items: { type: Type.STRING } },
-            errorIndex: { type: Type.NUMBER },
-            correction: { type: Type.STRING },
-            corrected_text: { type: Type.STRING },
-            rule: { type: Type.STRING }
-          },
-          required: ["text", "options", "errorIndex", "correction", "corrected_text", "rule"]
-        }
-      }
-    }
-  });
-  return JSON.parse(response.text || "[]");
-};

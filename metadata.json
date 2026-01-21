@@ -1,8 +1,6 @@
+
 {
-  "name": "VocabVantage - Elite SAT Mastery",
-  "description": "A high-performance SAT vocabulary learning platform featuring AI-powered mnemonics, image associations, and spaced-repetition flashcards to maximize retention and score potential.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
+  "name": "VocabVantage - Local Titan V21",
+  "description": "A high-performance SAT vocabulary platform featuring 2,250 core words, space-repetition logic, and elite performance games designed for 100% offline mastery.",
+  "requestFramePermissions": []
 }

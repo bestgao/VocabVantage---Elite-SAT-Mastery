@@ -1,8 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Word } from '../../types';
-import { generateOddOneOutExplanation } from '../../services/gemini';
-import { titanSanitize } from '../../constants';
 
 interface OddOneOutProps {
   words: Word[];
@@ -11,58 +9,47 @@ interface OddOneOutProps {
 }
 
 interface OddHistory {
-  options: string[];
+  options: { term: string, definition: string, isOutlier: boolean }[];
   oddWord: string;
   userWord: string;
   isCorrect: boolean;
-  definition: string;
-  relationship: string;
-  explanation: string;
+  isTimeout: boolean;
+  theme: string;
+  nexusReason: string;
 }
 
 const OddOneOut: React.FC<OddOneOutProps> = ({ words, onBack, onXP }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [loadingChallenge, setLoadingChallenge] = useState(false);
   const [timeLeft, setTimeLeft] = useState(45);
   const [score, setScore] = useState(0);
-  const [currentChallenge, setCurrentChallenge] = useState<{ options: string[], correctIndex: number, oddWord: string, def: string } | null>(null);
+  const [currentChallenge, setCurrentChallenge] = useState<{ options: { term: string, definition: string, isOutlier: boolean }[], correctIndex: number, theme: string } | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [history, setHistory] = useState<OddHistory[]>([]);
   const timerRef = useRef<number>(0);
 
-  // Filter for words with high-quality peer data
-  const validBaseWords = words.filter(w => w.synonyms && w.synonyms.filter(s => s.length > 2 && !s.includes('Concept')).length >= 2);
-
   const generateChallenge = () => {
-    if (words.length < 10) {
-      alert("Insufficient data in Vault.");
-      onBack();
-      return;
-    }
-
-    // Try to pick a word with synonyms first
-    let baseWord = validBaseWords[Math.floor(Math.random() * validBaseWords.length)];
-    if (!baseWord) baseWord = words[Math.floor(Math.random() * words.length)];
-
-    const synonyms = (baseWord.synonyms || [])
-      .filter(s => s.length > 2 && !s.includes('Concept'))
-      .slice(0, 2);
+    const levels = ['Core', 'Medium', 'Advanced'] as const;
+    const tier = levels[Math.floor(Math.random() * levels.length)];
+    const nexusPool = words.filter(w => w.satLevel === tier);
     
-    // Pick the odd word from words that are NOT synonyms of the base word
-    const oddWordObj = words
-      .filter(w => w.id !== baseWord.id && !(baseWord.synonyms || []).includes(w.term))
-      .sort(() => 0.5 - Math.random())[0];
+    // Fallback if specific tier pool is empty or too small
+    const finalNexus = nexusPool.length >= 3 ? nexusPool : words;
+    const baseWords = [...finalNexus].sort(() => 0.5 - Math.random()).slice(0, 3);
+    const outlier = words.filter(w => 
+      !baseWords.some(bw => bw.id === w.id) && 
+      (nexusPool.length >= 3 ? w.satLevel !== tier : true)
+    ).sort(() => 0.5 - Math.random())[0] || words.find(w => !baseWords.some(bw => bw.id === w.id));
 
-    // Clean all strings using the global titanSanitize
-    const options = [baseWord.term, ...synonyms, oddWordObj.term]
-      .map(titanSanitize)
-      .sort(() => 0.5 - Math.random());
-    
+    if (!outlier) return; // Safety check
+
+    const options = baseWords.map(w => ({ term: w.term, definition: w.definition, isOutlier: false }));
+    options.push({ term: outlier.term, definition: outlier.definition, isOutlier: true });
+
+    const shuffled = options.sort(() => 0.5 - Math.random());
     setCurrentChallenge({
-      options,
-      correctIndex: options.indexOf(titanSanitize(oddWordObj.term)),
-      oddWord: titanSanitize(oddWordObj.term),
-      def: titanSanitize(oddWordObj.definition)
+      options: shuffled,
+      correctIndex: shuffled.findIndex(o => o.isOutlier),
+      theme: nexusPool.length >= 3 ? `${tier} Tier Register` : "General Vocabulary"
     });
   };
 
@@ -71,6 +58,7 @@ const OddOneOut: React.FC<OddOneOutProps> = ({ words, onBack, onXP }) => {
     setScore(0);
     setTimeLeft(45);
     setHistory([]);
+    setFeedback(null);
     generateChallenge();
   };
 
@@ -78,170 +66,165 @@ const OddOneOut: React.FC<OddOneOutProps> = ({ words, onBack, onXP }) => {
     if (isPlaying && timeLeft > 0) {
       timerRef.current = window.setInterval(() => setTimeLeft(t => t - 1), 1000);
     } else if (timeLeft === 0 && isPlaying) {
+      if (currentChallenge && !feedback) {
+        const oddWord = currentChallenge.options[currentChallenge.correctIndex].term;
+        setHistory(prev => [...prev, {
+          options: currentChallenge.options,
+          oddWord,
+          userWord: "N/A",
+          isCorrect: false,
+          isTimeout: true,
+          theme: currentChallenge.theme,
+          nexusReason: `Identification stalled. The group members belonged to the '${currentChallenge.theme}', while "${oddWord}" was the outlier.`
+        }]);
+      }
       setIsPlaying(false);
-      onXP(score * 15, 'oddout', score);
+      onXP(score * 20, 'oddout', score);
     }
     return () => clearInterval(timerRef.current);
-  }, [isPlaying, timeLeft]);
+  }, [isPlaying, timeLeft, currentChallenge, feedback]);
 
-  const handleAnswer = async (index: number) => {
-    if (!currentChallenge || feedback || loadingChallenge) return;
-
+  const handleAnswer = (index: number) => {
+    if (!currentChallenge || feedback || timeLeft === 0) return;
     const isCorrect = index === currentChallenge.correctIndex;
-    const userWord = currentChallenge.options[index];
-    const oddWord = currentChallenge.oddWord;
     
+    const oddWord = currentChallenge.options[currentChallenge.correctIndex].term;
+    const nexusReason = `The primary group consists of words within the '${currentChallenge.theme}'. "${oddWord}" was the outlier because its complexity level or semantic categorization deviates from the group bond.`;
+
+    setHistory(prev => [...prev, {
+      options: currentChallenge.options,
+      oddWord,
+      userWord: currentChallenge.options[index].term,
+      isCorrect,
+      isTimeout: false,
+      theme: currentChallenge.theme,
+      nexusReason
+    }]);
+
     setFeedback(isCorrect ? 'correct' : 'wrong');
-    setLoadingChallenge(true);
-
-    try {
-      const analysis = await generateOddOneOutExplanation(currentChallenge.options, oddWord);
-      setHistory(prev => [...prev, {
-        options: currentChallenge.options,
-        oddWord,
-        userWord,
-        isCorrect,
-        definition: currentChallenge.def,
-        relationship: analysis.relationship,
-        explanation: analysis.explanation
-      }]);
-    } catch (e) {
-      setHistory(prev => [...prev, {
-        options: currentChallenge.options,
-        oddWord,
-        userWord,
-        isCorrect,
-        definition: currentChallenge.def,
-        relationship: "Semantic bond detected",
-        explanation: "Neural link failed during analysis."
-      }]);
-    }
-
     if (isCorrect) setScore(s => s + 1);
-
-    setTimeout(() => {
-      setFeedback(null);
-      setLoadingChallenge(false);
-      generateChallenge();
-    }, 800);
+    
+    setTimeout(() => { 
+      if (timeLeft > 0) {
+        setFeedback(null); 
+        generateChallenge(); 
+      }
+    }, 300);
   };
 
+  // START SCREEN
   if (!isPlaying && timeLeft === 45) {
     return (
       <div className="bg-white rounded-[4rem] p-12 text-center space-y-10 shadow-2xl max-w-lg mx-auto border border-slate-100 animate-in zoom-in-95">
         <div className="text-7xl mb-4">🕵️‍♀️</div>
-        <h2 className="text-4xl font-black text-slate-900 tracking-tight">Odd One Out</h2>
-        <p className="text-slate-500 font-medium leading-relaxed px-6">Identify the infiltrator failing the semantic pattern established by your vault assets.</p>
-        <button onClick={startGame} className="w-full bg-rose-500 text-white py-6 rounded-[2.5rem] font-black text-xl hover:bg-rose-600 shadow-xl transition-all active:scale-95">START HUNT</button>
-        <button onClick={onBack} className="text-slate-400 font-bold text-sm block mx-auto hover:text-slate-900 transition-colors">Abort</button>
+        <h2 className="text-4xl font-black text-slate-900 tracking-tight uppercase italic">Odd One <span className="text-rose-600">Out</span></h2>
+        <p className="text-slate-500 font-medium leading-relaxed">Analyze the set. Spot the semantic anomaly that doesn't belong in the group register.</p>
+        <button onClick={startGame} className="w-full bg-rose-600 text-white py-6 rounded-3xl font-black text-xl hover:bg-rose-700 transition-all shadow-xl active:scale-95">INITIALIZE SCAN</button>
+        <button onClick={onBack} className="text-slate-400 font-bold text-sm block mx-auto hover:text-slate-900">Return to Hub</button>
       </div>
     );
   }
 
+  // RESULTS SCREEN
   if (!isPlaying && timeLeft === 0) {
+    const accuracy = history.length > 0 ? Math.round((score / history.length) * 100) : 0;
+    
     return (
-      <div className="bg-white rounded-[4rem] p-10 md:p-14 space-y-12 shadow-2xl max-w-4xl mx-auto border border-slate-100 overflow-y-auto max-h-[92vh] no-scrollbar pb-24">
+      <div className="bg-white rounded-[4rem] p-10 md:p-14 space-y-12 shadow-2xl max-w-5xl mx-auto border border-slate-100 overflow-y-auto max-h-[90vh] no-scrollbar pb-24">
         <div className="text-center">
-          <div className="text-6xl mb-4">📜</div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tight">Post-Session Audit</h2>
-          <p className="text-7xl font-black text-rose-500 mt-2">{score}</p>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">+ {score * 15} XP Earned</p>
-        </div>
-
-        <div className="space-y-10 pt-4 border-t border-slate-100">
-           {history.map((h, i) => (
-             <div key={i} className={`p-10 rounded-[4rem] border-2 transition-all ${h.isCorrect ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50/50 border-rose-100 shadow-xl shadow-rose-100/10'}`}>
-                <div className="flex justify-between items-start mb-8">
-                   <div className="space-y-1">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Detected Outlier</p>
-                      <h4 className="text-4xl font-black text-slate-900 tracking-tight">{h.oddWord}</h4>
-                   </div>
-                   <span className={`text-[9px] font-black uppercase px-6 py-2 rounded-full tracking-widest shadow-sm ${h.isCorrect ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>
-                     {h.isCorrect ? 'Neutralized' : 'Breach Recorded'}
-                   </span>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <div className="space-y-6">
-                    <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
-                       <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">Logic Flow</p>
-                       <div className="flex flex-col gap-4">
-                          <div className={`p-4 rounded-2xl border ${h.isCorrect ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-200'}`}>
-                             <p className="text-[9px] font-black uppercase text-slate-500 mb-1">User Deduction</p>
-                             <p className="font-black text-slate-900">"{h.userWord}"</p>
-                          </div>
-                          {!h.isCorrect && (
-                            <div className="p-4 rounded-2xl border bg-emerald-50 border-emerald-200">
-                               <p className="text-[9px] font-black uppercase text-emerald-600 mb-1">Actual Outlier</p>
-                               <p className="font-black text-emerald-800 italic">"{h.oddWord}"</p>
-                            </div>
-                          )}
-                       </div>
-                    </div>
-                    <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Target Outlier Definition</p>
-                      <p className="text-sm text-slate-600 font-medium leading-relaxed italic">"{h.definition}"</p>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-slate-950 text-slate-200 p-10 rounded-[3rem] shadow-2xl flex flex-col justify-center">
-                    <p className="text-amber-400 font-black text-[10px] uppercase tracking-[0.2em] mb-4">Semantic Bond: {h.relationship}</p>
-                    <p className="text-sm font-medium leading-[1.8] text-slate-400 border-l-2 border-slate-700 pl-6">
-                      {h.explanation}
-                    </p>
-                  </div>
-                </div>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Detective Performance Audit</h2>
+          <div className="flex justify-center gap-12 items-center mt-6">
+             <div className="text-center">
+                <p className="text-6xl font-black text-rose-500">{score}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Infiltrators Neutralized</p>
              </div>
-           ))}
+             <div className="h-16 w-px bg-slate-100"></div>
+             <div className="text-center">
+                <p className="text-6xl font-black text-slate-900">{accuracy}%</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logic Accuracy</p>
+             </div>
+          </div>
         </div>
 
-        <div className="flex gap-4 pt-6 sticky bottom-0 bg-white/95 backdrop-blur-md">
-          <button onClick={startGame} className="flex-1 bg-slate-950 text-white py-6 rounded-[2.5rem] font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all">Re-Initiate Hunt</button>
-          <button onClick={onBack} className="flex-1 bg-slate-100 text-slate-900 py-6 rounded-[2.5rem] font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">Hub</button>
+        <div className="space-y-12 border-t border-slate-100 pt-12">
+          {history.map((h, i) => (
+            <div key={i} className={`p-10 rounded-[4rem] border-2 transition-all ${h.isCorrect ? 'bg-emerald-50 border-emerald-100' : h.isTimeout ? 'bg-amber-50 border-amber-100' : 'bg-rose-50 border-rose-100'}`}>
+               <div className="flex justify-between items-center mb-6">
+                 <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest px-4 py-1.5 bg-white rounded-full border border-slate-100">Case ID #{i+1}: {h.theme}</p>
+                 <span className={`text-[9px] font-black uppercase px-6 py-2 rounded-full tracking-widest ${h.isCorrect ? 'bg-emerald-600 text-white' : h.isTimeout ? 'bg-amber-600 text-white' : 'bg-rose-600 text-white'}`}>
+                   {h.isCorrect ? 'Validated' : h.isTimeout ? 'Timed Out' : 'Detection Failure'}
+                 </span>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                 {h.options.map((opt, idx) => (
+                   <div key={idx} className={`p-6 rounded-3xl border transition-all h-44 flex flex-col justify-between ${opt.isOutlier ? 'bg-amber-100 border-amber-300 shadow-md ring-4 ring-amber-500/5' : 'bg-white border-slate-100 shadow-sm'}`}>
+                      <div>
+                        <h4 className={`font-black text-lg ${opt.isOutlier ? 'text-rose-600' : 'text-slate-900'}`}>{opt.term}</h4>
+                        <p className="text-[10px] text-slate-500 italic mt-1 leading-relaxed line-clamp-3">"{opt.definition}"</p>
+                      </div>
+                      <p className={`text-[8px] font-black uppercase tracking-widest mt-2 ${opt.isOutlier ? 'text-amber-600' : 'text-slate-300'}`}>
+                        {opt.isOutlier ? 'Outlier' : 'Nexus Member'}
+                      </p>
+                   </div>
+                 ))}
+               </div>
+
+               <div className="p-6 bg-white/50 rounded-3xl border border-slate-200/50 mb-8">
+                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2">Nexus Explanation</p>
+                  <p className="text-sm font-medium text-slate-700 leading-relaxed italic">{h.nexusReason}</p>
+               </div>
+
+               <div className="mt-8 pt-6 border-t border-slate-200/50 flex justify-center gap-12">
+                  <div className="text-center">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Your Deduction</p>
+                    <p className={`font-black text-xl ${h.isCorrect ? 'text-emerald-600' : h.isTimeout ? 'text-amber-600' : 'text-rose-600'}`}>{h.userWord}</p>
+                  </div>
+                  {(!h.isCorrect || h.isTimeout) && (
+                    <div className="text-center">
+                      <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Actual Outlier</p>
+                      <p className="font-black text-xl text-emerald-600 underline underline-offset-8">{h.oddWord}</p>
+                    </div>
+                  )}
+               </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-4 pt-6 sticky bottom-0 bg-white/90 backdrop-blur pb-10">
+          <button onClick={startGame} className="flex-1 bg-slate-950 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-2xl">Re-Initiate</button>
+          <button onClick={onBack} className="flex-1 bg-slate-100 text-slate-900 py-6 rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Hub</button>
         </div>
       </div>
     );
   }
 
+  // GAMEPLAY UI
   return (
-    <div className={`max-w-xl mx-auto space-y-10 p-12 rounded-[4.5rem] transition-all duration-500 ${feedback === 'correct' ? 'bg-emerald-50 scale-[1.02]' : feedback === 'wrong' ? 'bg-rose-50 shake' : 'bg-white shadow-2xl'}`}>
-      <div className="flex justify-between items-center px-6">
-        <div className="space-y-1">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clock</p>
-          <p className="text-3xl font-black text-slate-900">{timeLeft}s</p>
-        </div>
-        <div className="space-y-1 text-right">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Validations</p>
-          <p className="text-3xl font-black text-rose-500">{score}</p>
-        </div>
+    <div className={`max-w-xl mx-auto space-y-10 p-12 rounded-[4rem] transition-all duration-300 ${feedback === 'correct' ? 'bg-emerald-50 scale-105' : feedback === 'wrong' ? 'bg-rose-50 shake' : 'bg-white shadow-2xl border border-slate-100'}`}>
+      <div className="flex justify-between items-center px-4">
+        <div className="space-y-1"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logic Scan</p><p className="text-3xl font-black text-slate-900">{timeLeft}s</p></div>
+        <div className="space-y-1 text-right"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hits</p><p className="text-3xl font-black text-rose-500">{score}</p></div>
       </div>
-
       <div className="text-center">
-        <h3 className="text-2xl font-black text-slate-900 mb-12 uppercase tracking-tighter leading-tight">
-          Select the term that <br/><span className="text-rose-600">fails</span> the semantic bond:
-        </h3>
+        <h3 className="text-2xl font-black text-slate-900 mb-10 uppercase tracking-tighter leading-tight">Neutralize the <br/><span className="text-rose-600 underline decoration-rose-200 underline-offset-8">Outlier</span>:</h3>
         <div className="grid grid-cols-2 gap-6">
           {currentChallenge?.options.map((opt, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleAnswer(idx)}
-              className={`p-6 rounded-[3rem] border-2 font-black text-xl transition-all h-44 flex items-center justify-center text-center leading-tight ${
-                feedback && idx === currentChallenge.correctIndex
-                  ? 'bg-emerald-600 border-emerald-700 text-white scale-110 shadow-xl'
-                  : 'bg-white border-slate-100 text-slate-700 hover:border-rose-500 hover:scale-[1.02] hover:shadow-lg'
+            <button 
+              key={idx} 
+              onClick={() => handleAnswer(idx)} 
+              className={`p-6 rounded-[2.5rem] border-2 font-black text-xl transition-all h-40 flex items-center justify-center text-center shadow-sm active:scale-95 ${
+                feedback && idx === currentChallenge.correctIndex 
+                  ? 'bg-emerald-600 border-emerald-700 text-white scale-110 shadow-lg' 
+                  : 'bg-white border-slate-100 text-slate-700 hover:border-rose-500 hover:scale-[1.02]'
               }`}
             >
-              {opt}
+              {opt.term}
             </button>
           ))}
         </div>
       </div>
-      
-      {loadingChallenge && (
-        <p className="text-center text-indigo-400 font-black text-[10px] uppercase tracking-[0.4em] animate-pulse">Running Neural Audit...</p>
-      )}
+      <p className="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] animate-pulse">Analyzing semantic bond...</p>
     </div>
   );
 };
-
 export default OddOneOut;

@@ -12,27 +12,39 @@ export interface UserInventory {
   xpBoosters: number;
 }
 
+export interface WordSRS {
+  lastReviewed: string;
+  nextReviewAt: string;
+  intervalDays: number;
+}
+
+export interface ActivityEntry {
+  date: string; // YYYY-MM-DD
+  mastered: number;
+  reviewed: number;
+  xpGained: number;
+}
+
 export interface UserProgress {
+  version: number;
+  revision: number; // Atomic counter for V17+
+  updatedAt: number;
   wordMastery: Record<string, MasteryLevel>;
-  masteryHistory: Record<string, number>; 
-  dailyGainHistory: Record<string, number>; 
-  customWords: Word[];
+  wordSRS: Record<string, WordSRS>;
+  activityLedger: Record<string, ActivityEntry>; 
   streak: number;
-  lastActive: string; 
-  lastCheckIn: string; 
+  lastActive: string;
   xp: number;
-  credits: number; 
-  highScores: Record<string, number>;
+  credits: number;
   inventory: UserInventory;
-  achievements: string[];
-  academicIntegrity: number;
-  isPremium: boolean;
-  // Plan & Motivation
   dailyMasteryGoal: number;
-  dailyMasteryProgress: Record<string, number>; // Date string YYYY-MM-DD -> count of words reaching Lvl 3
-  dailyReviewedProgress: Record<string, number>; // Date string YYYY-MM-DD -> count of total words reviewed
-  milestonesClaimed: string[]; 
+  weeklyMasteryGoal: number;
+  monthlyMasteryGoal: number;
+  quarterlyMasteryGoal: number;
+  annualMasteryGoal: number;
+  milestonesClaimed: string[];
   lastConfig: SessionConfig;
+  customWords: Word[];
 }
 
 export interface Word {
@@ -48,24 +60,24 @@ export interface Word {
   frequencyTier: 'High' | 'Mid' | 'Low';
 }
 
-export enum AppScreen {
-  DASHBOARD = 'DASHBOARD',
-  LEARN = 'LEARN',
-  STUDY_SETUP = 'STUDY_SETUP',
-  QUIZ = 'QUIZ',
-  WORD_BANK = 'WORD_BANK',
-  AI_TUTOR = 'AI_TUTOR',
-  GAMES = 'GAMES',
-  LEADERBOARD = 'LEADERBOARD',
-  STORE = 'STORE',
-  ACHIEVEMENTS = 'ACHIEVEMENTS'
-}
-
 export interface QuizQuestion {
   id: string;
   word: Word;
   questionText: string;
   options: string[];
   correctIndex: number;
-  type: 'definition' | 'context';
+  type: string;
+}
+
+export enum AppScreen {
+  DASHBOARD = 'DASHBOARD',
+  LEARN = 'LEARN',
+  STUDY_SETUP = 'STUDY_SETUP',
+  QUIZ = 'QUIZ',
+  WORD_BANK = 'WORD_BANK',
+  GAME_HUB = 'GAME_HUB',
+  AI_TUTOR = 'AI_TUTOR',
+  LEADERBOARD = 'LEADERBOARD',
+  STORE = 'STORE',
+  ACHIEVEMENTS = 'ACHIEVEMENTS'
 }

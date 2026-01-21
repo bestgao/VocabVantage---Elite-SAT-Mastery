@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#020617" />
     
-    <title>VocabVantage v2.8.4 - Vanguard</title>
+    <title>VocabVantage v2.9.0 - Apex</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -58,6 +58,9 @@
         0% { background-position: -200% 0; }
         100% { background-position: 200% 0; }
       }
+
+      .selection\:bg-indigo-100::selection { background-color: #e0e7ff; }
+      .selection\:text-indigo-900::selection { color: #1e1b4b; }
     </style>
     <script type="importmap">
 {
@@ -71,9 +74,11 @@
   }
 }
 </script>
-  </head>
+  <link rel="stylesheet" href="/index.css">
+</head>
   <body>
     <div id="root"></div>
-    <script type="module" src="index.tsx?v=2.8.4"></script>
-  </body>
+    <script type="module" src="index.tsx?v=2.9.0"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>
