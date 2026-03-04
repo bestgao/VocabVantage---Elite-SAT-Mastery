@@ -13,8 +13,20 @@ if (!rootElement) {
 const bootData = hydrateVault();
 
 const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App bootData={bootData} />
-  </React.StrictMode>
-);
+
+try {
+  root.render(
+    <React.StrictMode>
+      <App bootData={bootData} />
+    </React.StrictMode>
+  );
+} catch (error) {
+  console.error("Fatal Render Error:", error);
+  rootElement.innerHTML = `
+    <div style="padding: 20px; color: red; font-family: sans-serif;">
+      <h1>Application Crash</h1>
+      <pre>${error instanceof Error ? error.stack : String(error)}</pre>
+      <button onclick="localStorage.clear(); location.reload();">Clear Data & Reset</button>
+    </div>
+  `;
+}

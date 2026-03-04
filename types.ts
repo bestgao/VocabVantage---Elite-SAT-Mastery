@@ -5,6 +5,8 @@ export interface SessionConfig {
   levels: string[];
   freqs: string[];
   masteries: number[];
+  domains?: string[];
+  highYieldOnly?: boolean;
 }
 
 export interface UserInventory {
@@ -58,6 +60,13 @@ export interface Word {
   imageUrl?: string;
   satLevel: 'Core' | 'Medium' | 'Advanced';
   frequencyTier: 'High' | 'Mid' | 'Low';
+  difficultyScore?: number;
+  difficultyBand?: string;
+  usageFrequencyScore?: number;
+  morphology?: string;
+  academicDomain?: string;
+  multipleMeaningsFlag?: boolean;
+  distractorType?: string;
 }
 
 export interface QuizQuestion {

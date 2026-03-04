@@ -2,7 +2,7 @@
 import { UserProgress } from './types';
 
 export const STABLE_KEY = 'vv:vault_v20';
-const SCHEMA_VERSION = 20;
+const SCHEMA_VERSION = 21; // Bumped for Neural Shield
 const LEGACY_KEYS = ['vv:vault_v19', 'vv:snapshot_v18', 'vv:snapshot', 'vv_apex_vault_v15'];
 
 export type BootStatus = 'BOOTING' | 'READY' | 'ERROR';
@@ -14,7 +14,7 @@ export interface BootResult {
   status: BootStatus;
 }
 
-const INITIAL_PROGRESS: UserProgress = {
+export const INITIAL_PROGRESS: UserProgress = {
   version: SCHEMA_VERSION,
   revision: 0,
   updatedAt: Date.now(),
@@ -24,7 +24,7 @@ const INITIAL_PROGRESS: UserProgress = {
   streak: 1,
   lastActive: new Date().toISOString(),
   xp: 0,
-  credits: 100,
+  credits: 500,
   inventory: { streakFreezes: 1, xpBoosters: 0 },
   dailyMasteryGoal: 10,
   weeklyMasteryGoal: 50,
@@ -32,17 +32,25 @@ const INITIAL_PROGRESS: UserProgress = {
   quarterlyMasteryGoal: 500,
   annualMasteryGoal: 1500,
   milestonesClaimed: [],
-  lastConfig: { levels: ['Core', 'Medium', 'Advanced'], freqs: ['High', 'Mid', 'Low'], masteries: [0, 1, 2] },
+  lastConfig: { 
+    levels: ['Core', 'Medium', 'Advanced'], 
+    freqs: ['High', 'Mid', 'Low'], 
+    masteries: [0, 1, 2],
+    domains: ['General', 'Science', 'History', 'Literature', 'Social Studies'],
+    highYieldOnly: false
+  },
   customWords: []
 };
 
 /**
- * [V20] DEEP HYDRATE PROTOCOL
- * Explicitly handles 0, false, and NaN to prevent config resets.
+ * [V20] NEURAL SHIELD HYDRATION
+ * Ensures that user data is NEVER deleted or reset during app upgrades.
+ * It merges the existing user data (source) with the new app schema (target).
  */
-function deepHydrate(target: any, source: any): any {
+export function deepHydrate(target: any, source: any): any {
   if (source === undefined || source === null) return target;
 
+  // If target is primitive, prefer source if types match
   if (typeof target === 'number') {
     return (typeof source === 'number' && !isNaN(source)) ? source : target;
   }
@@ -52,18 +60,24 @@ function deepHydrate(target: any, source: any): any {
   if (typeof target === 'string') {
     return (typeof source === 'string') ? source : target;
   }
+  
+  // Arrays: Prefer source array
   if (Array.isArray(target)) {
     return Array.isArray(source) ? [...source] : [...target];
   }
-  if (typeof target === 'object') {
-    const result = { ...target };
+
+  // Objects: Recursive merge
+  if (typeof target === 'object' && target !== null) {
+    // Start with a copy of the source to preserve any keys not in the current target schema
+    const result = { ...source };
+    
+    // Ensure all keys from the target (new schema) exist, filling with source if available
     for (const key in target) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        result[key] = deepHydrate(target[key], source[key]);
-      }
+      result[key] = deepHydrate(target[key], source[key]);
     }
     return result;
   }
+  
   return source;
 }
 

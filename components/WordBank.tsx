@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Word, MasteryLevel } from '../types';
 import { MASTERY_COLORS } from '../constants';
+import { HelpCircle, Download, Info, X, ShieldCheck, Database, FileText } from 'lucide-react';
 
 interface WordBankProps {
   words: Word[];
@@ -17,8 +18,36 @@ const WordBank: React.FC<WordBankProps> = ({ words, progress, onImport, onDelete
   const [filterFreq, setFilterFreq] = useState<Word['frequencyTier'] | 'all'>('all');
   const [search, setSearch] = useState('');
   const [showImporter, setShowImporter] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportCSV = () => {
+    try {
+      const headers = ['Term', 'POS', 'Definition', 'Example', 'Synonyms', 'SAT Level', 'Frequency Tier'].join(',');
+      const rows = words.map(w => [
+        `"${w.term}"`,
+        `"${w.partOfSpeech}"`,
+        `"${w.definition.replace(/"/g, '""')}"`,
+        `"${w.example.replace(/"/g, '""')}"`,
+        `"${w.synonyms.join('; ')}"`,
+        `"${w.satLevel}"`,
+        `"${w.frequencyTier}"`
+      ].join(','));
+
+      const csvContent = [headers, ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `titan_master_backup_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      alert("Export failed.");
+    }
+  };
 
   const filteredWords = useMemo(() => {
     const s = search.toLowerCase().trim();
@@ -104,10 +133,90 @@ const WordBank: React.FC<WordBankProps> = ({ words, progress, onImport, onDelete
           </p>
         </div>
         <div className="flex gap-3">
+          <button onClick={() => setShowHelp(true)} className="w-14 h-14 bg-white border border-slate-100 text-slate-400 rounded-2xl flex items-center justify-center hover:text-indigo-600 hover:border-indigo-100 transition-all shadow-sm group">
+            <HelpCircle size={24} className="group-hover:rotate-12 transition-transform" />
+          </button>
+          <button onClick={handleExportCSV} className="px-8 py-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center gap-2">
+            <Download size={16} />
+            Backup CSV
+          </button>
           <button onClick={() => setShowImporter(true)} className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition-all">Import CSV</button>
           <button onClick={onClose} className="px-8 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200">Exit</button>
         </div>
       </div>
+
+      {showHelp && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 md:p-10">
+          <div className="bg-white w-full max-w-3xl rounded-[4rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            <div className="p-12 bg-indigo-600 text-white flex justify-between items-center">
+              <div>
+                <h3 className="text-4xl font-black tracking-tighter italic">Titan <span className="text-indigo-200">Intelligence Guide</span></h3>
+                <p className="text-xs font-bold uppercase tracking-widest opacity-80 mt-1">System Navigation & Data Management</p>
+              </div>
+              <button onClick={() => setShowHelp(false)} className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="flex-1 p-12 overflow-y-auto space-y-12">
+              <section className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                    <Database size={24} />
+                  </div>
+                  <h4 className="text-xl font-black text-slate-900 uppercase tracking-tight">Data Architecture</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-2">Master Storage</p>
+                    <p className="text-sm text-slate-600 font-medium leading-relaxed">All 2,280 words are stored in the application's core volumes. They are permanent and cannot be deleted from the source.</p>
+                  </div>
+                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-2">User Vault</p>
+                    <p className="text-sm text-slate-600 font-medium leading-relaxed">Your mastery levels, XP, and custom words are stored in your browser's local storage (IndexedDB/LocalStorage).</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <h4 className="text-xl font-black text-slate-900 uppercase tracking-tight">Backup & Recovery</h4>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex gap-6 p-6 hover:bg-slate-50 rounded-3xl transition-all group">
+                    <div className="mt-1 text-slate-300 group-hover:text-indigo-500 transition-colors"><Download size={20} /></div>
+                    <div>
+                      <p className="font-black text-slate-900 text-sm uppercase tracking-tight">Backup CSV</p>
+                      <p className="text-xs text-slate-500 font-medium mt-1">Downloads the entire 2,280-word dataset as a CSV. Use this to keep a physical copy of the library.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-6 p-6 hover:bg-slate-50 rounded-3xl transition-all group">
+                    <div className="mt-1 text-slate-300 group-hover:text-indigo-500 transition-colors"><FileText size={20} /></div>
+                    <div>
+                      <p className="font-black text-slate-900 text-sm uppercase tracking-tight">Export Local Vault (Dashboard)</p>
+                      <p className="text-xs text-slate-500 font-medium mt-1">On the main dashboard, use "Export Local Vault" to save your progress (XP, Mastery) as a JSON file.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-6 p-6 hover:bg-slate-50 rounded-3xl transition-all group">
+                    <div className="mt-1 text-slate-300 group-hover:text-indigo-500 transition-colors"><Info size={20} /></div>
+                    <div>
+                      <p className="font-black text-slate-900 text-sm uppercase tracking-tight">How to Restore</p>
+                      <p className="text-xs text-slate-500 font-medium mt-1">If your data is lost, click "Import CSV" and select your backup file. The system will automatically resync all terms.</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div className="p-12 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setShowHelp(false)} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-xl">Acknowledge</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showImporter && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4">

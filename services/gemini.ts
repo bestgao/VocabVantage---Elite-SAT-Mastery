@@ -2,14 +2,14 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Word } from "../types";
 
-const isAIEnabled = !!process.env.API_KEY; 
+const isAIEnabled = !!import.meta.env.VITE_GEMINI_API_KEY; 
 
 export const isSystemAIEnabled = () => isAIEnabled;
 
 export const validateSystemConnection = async (): Promise<{ status: 'online' | 'offline', message: string }> => {
   if (!isAIEnabled) return { status: 'offline', message: 'Local Mode Active' };
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: 'ping',
@@ -22,7 +22,7 @@ export const validateSystemConnection = async (): Promise<{ status: 'online' | '
 
 export const fetchSynonymsAndMnemonics = async (word: string, currentDefinition: string) => {
   if (!isAIEnabled) throw new Error("AI disabled. Please check your configuration.");
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: `Expand definition for "${word}". Current definition: "${currentDefinition}". Return JSON with synonyms and mnemonic.`,
@@ -33,7 +33,7 @@ export const fetchSynonymsAndMnemonics = async (word: string, currentDefinition:
 
 export const generateSATQuestion = async (word: string, definition: string) => {
   if (!isAIEnabled) return null;
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: `Generate an SAT-style multiple-choice question for the word "${word}" which means "${definition}". Return JSON format.`,
@@ -45,7 +45,7 @@ export const generateSATQuestion = async (word: string, definition: string) => {
 export const generateWordImage = async (word: string, definition: string) => {
   if (!isAIEnabled) return null;
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
@@ -71,7 +71,7 @@ export const generateWordImage = async (word: string, definition: string) => {
 
 export const generateSpeech = async (text: string): Promise<string> => {
   if (!isAIEnabled) return ""; 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-preview-tts",
     contents: [{ parts: [{ text }] }],
@@ -85,7 +85,7 @@ export const generateSpeech = async (text: string): Promise<string> => {
 
 export const generateDynamicSyntaxChallenges = async (count: number = 5) => {
   if (!isAIEnabled) return [];
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: `Generate ${count} SAT-style syntax challenges. Each challenge should have a sentence where one part in brackets is grammatically incorrect. Return JSON. The 'explanation' field must be a specific, detailed pedagogical reason why that specific part is wrong in the context of the sentence.`,
@@ -102,7 +102,7 @@ export const generateDynamicSyntaxChallenges = async (count: number = 5) => {
             },
             options: {
               type: Type.ARRAY,
-              items: { type: Type.STRING },
+              items: { type: Type.OBJECT },
               description: 'The phrases inside brackets'
             },
             errorIndex: {
@@ -141,7 +141,7 @@ export const generateDynamicSyntaxChallenges = async (count: number = 5) => {
 
 export const getTutorResponse = async (history: any[], input: string) => {
   if (!isAIEnabled) return "AI Tutor is currently in development for Version 2.0. Please use the Local Bank for now.";
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
     contents: `You are a helpful SAT tutor. History: ${JSON.stringify(history)}. User input: ${input}`,

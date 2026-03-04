@@ -5,308 +5,65 @@ import { Word } from './types';
  * TITAN INTELLIGENCE CORE - v4.1.0
  * Locked IDs for Eternal Protocol V17
  */
-const CURATED_DATA = [
-  "abate|verb|to become less active, less intense, or less in amount.|As the hurricane's force abated, the sun began to peek through the clouds.|subside;diminish;recede;wane",
-  "abstract|adjective|existing in thought or as an idea but not having a physical existence.|Beauty and truth are abstract concepts that philosophers have debated for centuries.|conceptual;theoretical;ideal;non-concrete",
-  "abysmal|adjective|extremely bad; appalling.|The weather conditions were abysmal, forcing the team to postpone the expedition.|appalling;dreadful;awful;terrible",
-  "accordingly|adverb|in a way that is appropriate to the particular circumstances.|The rules have changed; we must adjust our strategy accordingly.|consequently;appropriately;suitably;hence",
-  "acquisition|noun|an asset or object bought or obtained, typically by a museum or library.|The library's newest acquisition is a rare first edition of a Shakespearean play.|purchase;attainment;possession;gain",
-  "adapt|verb|make suitable for a new use or purpose; modify.|Biological organisms must adapt to their environments or face extinction.|modify;adjust;acclimatize;conform",
-  "adept|adjective|very skilled or proficient at something.|She is particularly adept at solving complex mathematical equations under pressure.|proficient;skillful;expert;dexterous",
-  "adequate|adjective|satisfactory or acceptable in quality or quantity.|The supply of fresh water was adequate for the entire duration of the trip.|sufficient;satisfactory;enough;passable",
-  "advent|noun|the arrival of a notable person, thing, or event.|The advent of the internet fundamentally changed how human beings communicate.|arrival;emergence;appearance;onset",
-  "adversarial|adjective|characterized by conflict or opposition.|The legal system is designed to be adversarial, with two sides arguing opposite views.|antagonistic;opposing;hostile;conflicting",
-  "advocate|verb|publicly recommend or support.|The scientist chose to advocate for more rigorous environmental regulations.|support;promote;champion;endorse",
-  "aesthetic|adjective|concerned with beauty or the appreciation of beauty.|The architect focused on the aesthetic appeal of the building's facade.|artistic;visual;ornamental;beautiful",
-  "afford|verb|have enough money to pay for; provide or supply an opportunity.|The high altitude of the balcony affords a spectacular view of the valley.|provide;yield;grant;offer",
-  "agitate|verb|make someone troubled or nervous.|The news of the sudden policy change began to agitate the shareholders.|unsettle;disturb;perturb;fluster",
-  "allude|verb|suggest or call attention to indirectly; hint at.|The speaker chose to allude to past failures without naming them directly.|hint;suggest;intimate;imply",
-  "altercation|noun|a noisy argument or disagreement, especially in public.|The minor disagreement quickly escalated into a heated altercation.|quarrel;dispute;spat;argument",
-  "ambiguous|adjective|open to more than one interpretation; having a double meaning.|The instructions were so ambiguous that no two students produced the same result.|vague;unclear;equivocal;obscure",
-  "ambitious|adjective|having or showing a strong desire and determination to succeed.|The young entrepreneur had ambitious plans to revolutionize the energy sector.|aspiring;determined;enterprising;driven",
-  "ambivalence|noun|the state of having mixed feelings or contradictory ideas about something.|Her ambivalence toward the proposal made it difficult for the committee to proceed.|uncertainty;hesitation;doubt;indecision",
-  "analogous|adjective|comparable in certain respects, typically in a way which makes clearer the nature of the things compared.|The relationship between a captain and a ship is analogous to that of a CEO and a company.|comparable;parallel;similar;akin",
-  "annihilate|verb|destroy utterly; obliterate.|The massive asteroid impact was enough to annihilate all life within a thousand miles.|obliterate;destroy;exterminate;eradicate",
-  "anomaly|noun|something that deviates from what is standard, normal, or expected.|The data scientist noted a strange anomaly in the quarterly performance metrics.|abnormality;irregularity;deviation;oddity",
-  "anticipate|verb|regard as probable; expect or predict.|Meteorologists anticipate a particularly harsh winter due to shifting ocean currents.|expect;predict;foresee;await",
-  "antipathy|noun|a deep-seated feeling of dislike; aversion.|There has always been a strong antipathy between the two rival political factions.|hostility;aversion;dislike;animosity",
-  "apex|noun|the top or highest part of something, especially one forming a point.|Reaching the apex of the mountain offered a view that spanned three states.|summit;peak;pinnacle;zenith",
-  "apprehension|noun|anxiety or fear that something bad or unpleasant will happen.|The student felt a sense of apprehension as the final exam approached.|anxiety;fear;dread;unease",
-  "articulate|verb|express an idea or feeling fluently and coherently.|It is important for a leader to articulate a clear vision for the future.|enunciate;express;vocalize;state",
-  "artificial|adjective|made or produced by human beings rather than occurring naturally.|The lab successfully created an artificial diamond that was identical to a natural one.|synthetic;fake;simulated;man-made",
-  "assertion|noun|a confident and forceful statement of fact or belief.|The lawyer's assertion that the witness was lying shocked the courtroom.|declaration;claim;statement;proclamation",
-  "austere|adjective|severe or strict in manner, attitude, or appearance.|The monk led an austere life, devoid of any modern luxuries or comforts.|strict;severe;stern;harsh",
-  "authenticity|noun|the quality of being authentic; genuineness.|The curator questioned the authenticity of the painting found in the attic.|genuineness;validity;legitimacy;truth",
-  "avenue|noun|a way of approaching a problem or making progress toward something.|Researchers are exploring every possible avenue to find a cure for the disease.|path;route;method;approach",
-  "avid|adjective|having or showing a keen interest in or enthusiasm for something.|An avid reader, she often finished two or three books every week.|keen;enthusiastic;eager;passionate",
-  "benevolent|adjective|well-meaning and kindly.|The benevolent billionaire donated half of his fortune to educational charities.|kind;generous;charitable;altruistic",
-  "bias|noun|prejudice in favor of or against one thing, person, or group compared with another.|The reporter was accused of showing bias in her coverage of the election.|prejudice;partiality;favoritism;slant",
-  "bittersweet|adjective|arousing pleasure tinged with sadness or pain.|Graduation was a bittersweet moment for the students leaving their friends behind.|poignant;evocative;mixed;sentimental",
-  "bolster|verb|support or strengthen; prop up.|The recent data served to bolster the theory that the economy was recovering.|strengthen;support;reinforce;buttress",
-  "brawl|noun|a rough or noisy fight or quarrel.|The peaceful protest unfortunately dissolved into a chaotic street brawl.|fight;scuffle;fracas;melee",
-  "brevity|noun|concise and exact use of words in writing or speech.|The brevity of the message was appreciated by the busy executives.|conciseness;shortness;succinctness;pithiness",
-  "candid|adjective|truthful and straightforward; frank.|In a candid interview, the actor discussed his struggles with fame.|frank;honest;direct;open",
-  "candor|noun|the quality of being open and honest in expression.|The CEO's candor about the company's failures earned him the respect of his employees.|honesty;frankness;openness;directness",
-  "capitalize|verb|take the chance to gain advantage from.|The team failed to capitalize on their early lead and eventually lost the game.|exploit;utilize;leverage;profit",
-  "capture|verb|take into one's possession or control by force.|The photographer managed to capture the exact moment the lightning struck.|seize;catch;secure;apprehend",
-  "civic|adjective|relating to a city or town, especially its administration; municipal.|Every citizen has a civic duty to participate in the democratic process.|municipal;public;community;urban",
-  "clinical|adjective|efficient and unemotional; coldly detached.|The doctor's clinical manner made the patient feel like a set of symptoms rather than a person.|detached;impersonal;unemotional;objective",
-  "clout|noun|influence or power, especially in politics or business.|The major tech company has significant clout when it comes to government policy.|influence;power;leverage;sway",
-  "coarse|adjective|rough or loose in texture or grain.|The coarse sand of the desert was difficult to walk on for long distances.|rough;gritty;crude;vulgar",
-  "coincide|verb|occur at or during the same time.|The release of the movie was timed to coincide with the lead actor's birthday.|concur;synchronize;clash;correspond",
-  "commission|verb|order or authorize the production of something.|The city decided to commission a new statue for the central plaza.|order;authorize;appoint;request",
-  "comparable|adjective|able to be likened to another; similar.|The two situations are not comparable; one is a minor issue while the other is a crisis.|similar;equivalent;parallel;matching",
-  "competent|adjective|having the necessary ability, knowledge, or skill to do something successfully.|The manager sought a competent assistant to help handle the heavy workload.|capable;skilled;proficient;adept",
-  "complacent|adjective|showing smug or uncritical satisfaction with oneself or one's achievements.|We cannot afford to be complacent despite our recent successes in the market.|smug;satisfied;unconcerned;content",
-  "complement|verb|add to something in a way that enhances or improves it.|The dry white wine was chosen specifically to complement the delicate flavors of the fish.|enhance;complete;augment;match",
-  "concede|verb|admit that something is true or valid after first denying or resisting it.|The politician was forced to concede that his opponent had won the election.|admit;acknowledge;yield;surrender",
-  "conceive|verb|form or devise a plan or idea in the mind.|It is difficult to conceive of a world where technology does not play a major role.|devise;formulate;imagine;think",
-  "condone|verb|accept and allow behavior that is considered morally wrong or offensive to continue.|The school does not condone bullying in any form and will take strict action.|excuse;pardon;tolerate;overlook",
-  "conducive|adjective|making a certain situation or outcome likely or possible.|A quiet environment is often conducive to deep study and better concentration.|favorable;helpful;beneficial;advantageous",
-  "confide|verb|tell someone about a secret or private matter while trusting them not to repeat it.|The witness chose to confide in the detective about what she had seen that night.|trust;reveal;disclose;divulge",
-  "confine|verb|keep or restrict someone or something within certain limits of space, scope, or time.|The flu outbreak forced the hospital to confine patients to their rooms.|restrict;limit;enclose;constrain",
-  "consensus|noun|a general agreement.|After hours of debate, the committee finally reached a consensus on the new policy.|agreement;harmony;unanimity;concord",
-  "constitute|verb|be a part of a whole; establish by law.|These few documents constitute the entire historical record of the event.|compose;form;establish;create",
-  "contemplate|verb|look thoughtfully for a long time at.|The artist sat on the bench to contemplate the landscape before beginning to paint.|consider;ponder;meditate;study",
-  "contention|noun|heated disagreement; an assertion maintained in an argument.|It is my contention that the proposed law will do more harm than good.|assertion;claim;argument;dispute",
-  "contradict|verb|deny the truth of a statement by asserting the opposite.|The new evidence seems to contradict the testimony provided by the first witness.|deny;refute;oppose;gainsay",
-  "controversial|adjective|giving rise or likely to give rise to public disagreement.|The decision to build a new highway through the park was highly controversial.|disputed;debatable;contentious;divisive",
-  "conventional|adjective|based on or in accordance with what is generally done or believed.|The scientist's theories were too radical for his more conventional colleagues.|traditional;standard;orthodox;common",
-  "convey|verb|make an idea, impression, or feeling known or understandable to someone.|The author uses vivid imagery to convey the sense of isolation felt by the protagonist.|communicate;transmit;express;impart",
-  "conviction|noun|a firmly held belief or opinion.|She spoke with great conviction about the need for social reform.|belief;certainty;opinion;assurance",
-  "corroborate|verb|confirm or give support to a statement, theory, or finding.|The witness was able to corroborate the suspect's alibi for the night of the crime.|confirm;verify;validate;support",
-  "counteract|verb|act against something in order to reduce its force or neutralize it.|The medicine was designed to counteract the effects of the poison.|neutralize;offset;oppose;thwart",
-  "counterargument|noun|an argument or set of reasons put forward to oppose an idea or theory developed in another argument.|The debater spent several minutes preparing a strong counterargument to his opponent's claims.|rebuttal;refutation;reply;response",
-  "counterproductive|adjective|having an effect that is opposite to the one intended or expected.|Adding more people to the project at this late stage might be counterproductive.|harmful;detrimental;unhelpful;adverse",
-  "culmination|noun|the highest or climactic point of something, especially as attained after a long time.|The winning goal was the culmination of years of hard work and dedication.|peak;summit;climax;pinnacle",
-  "cultivate|verb|try to acquire or develop a quality, sentiment, or skill.|It is important to cultivate a positive attitude when facing difficult challenges.|nurture;develop;foster;grow",
-  "decree|noun|an official order issued by a legal authority.|The king issued a decree that all taxes would be lowered for the coming year.|order;edict;mandate;proclamation",
-  "deference|noun|humble submission and respect.|He addressed the elderly professor with a great deal of deference.|respect;reverence;veneration;regard",
-  "deficient|adjective|not having enough of a specified quality or ingredient.|The report was deficient in several key areas, leading to its rejection.|lacking;inadequate;scant;wanting",
-  "demonstrate|verb|clearly show the existence or truth of something by giving proof or evidence.|The experiment was designed to demonstrate the laws of thermodynamics in action.|show;prove;exhibit;manifest",
-  "demur|verb|raise doubts or objections or show reluctance.|Most of the committee agreed, but one member chose to demur from the final decision.|object;hesitate;protest;dissent",
-  "deplete|verb|use up the supply or resources of.|The long drought began to deplete the city's main water reservoir.|exhaust;drain;consume;empty",
-  "desolate|adjective|of a place deserted of people and in a state of bleak and dismal emptiness.|The landscape was desolate and grey, with no sign of life for miles.|barren;bleak;empty;deserted",
-  "devise|verb|plan or invent a complex procedure, system, or mechanism by careful thought.|Engineers had to devise a new way to stabilize the bridge during high winds.|invent;design;formulate;create",
-  "dilemma|noun|a situation in which a difficult choice has to be made between two or more alternatives, especially equally undesirable ones.|The captain faced a difficult dilemma: stay with the sinking ship or save his crew.|quandary;predicament;problem;puzzle",
-  "diligence|noun|careful and persistent work or effort.|Success in this field requires a great deal of diligence and attention to detail.|persistence;assiduity;industry;effort",
-  "diminish|verb|make or become less.|The noise began to diminish as we moved further away from the construction site.|decrease;lessen;wane;dwindle",
-  "dire|adjective|of a situation or event extremely serious or urgent.|The consequences of failing to act now could be dire for the future of the planet.|urgent;critical;dreadful;extreme",
-  "discord|noun|disagreement between people.|The new policy caused a great deal of discord among the members of the board.|conflict;friction;disharmony;strife",
-  "disdain|noun|the feeling that someone or something is unworthy of one's consideration or respect; contempt.|The aristocrat looked at the commoner with a sense of cold disdain.|contempt;scorn;disrespect;derision",
-  "dismay|noun|consternation and distress, typically that caused by something unexpected.|The team felt a sense of dismay when they saw the final score of the game.|distress;alarm;shock;consternation",
-  "disparage|verb|regard or represent as being of little worth.|The critic's tendency to disparage modern art made him very unpopular with young painters.|belittle;depreciate;denigrate;slight",
-  "dispatch|verb|send off to a destination or for a purpose.|The general decided to dispatch a small group of scouts to gather intelligence.|send;transmit;post;ship",
-  "diversification|noun|the process of a company enlarging or varying its range of products or field of operation.|The company's strategy of diversification helped it survive the economic downturn.|variety;variation;expansion;spread",
-  "doctrine|noun|a belief or set of beliefs held and taught by a church, political party, or other group.|The central doctrine of the organization is that all people should be treated equally.|belief;principle;tenet;creed",
-  "dominion|noun|sovereignty or control.|The ancient empire once held dominion over most of the known world.|control;sovereignty;rule;authority",
-  "dreary|adjective|dull, bleak, and lifeless; depressing.|The dreary weather matched the somber mood of the funeral procession.|dull;gloomy;bleak;lifeless",
-  "dubious|adjective|hesitating or doubting.|The claims made by the salesman were dubious at best, and no one believed them.|doubtful;uncertain;suspicious;skeptical",
-  "eccentric|adjective|of a person or their behavior unconventional and slightly strange.|The inventor was known for his eccentric habits, such as wearing pajamas to work.|odd;peculiar;weird;unconventional",
-  "egregious|adjective|outstandingly bad; shocking.|The error in the financial report was so egregious that it could not be ignored.|shocking;appalling;horrific;flagrant",
-  "eloquent|adjective|fluent or persuasive in speaking or writing.|The civil rights leader gave an eloquent speech that inspired millions.|persuasive;fluent;articulate;expressive",
-  "elucidate|verb|make something lucid or clear; explain.|The professor used a diagram to help elucidate the complex process of cellular division.|explain;clarify;illuminate;expound",
-  "elusive|adjective|difficult to find, catch, or achieve.|Success in the competitive industry proved to be elusive for the young artist.|evasive;slippery;fleeting;shifting",
-  "emblematic|adjective|serving as a symbol of a particular quality or concept; symbolic.|The eagle is emblematic of the strength and freedom of the nation.|symbolic;representative;typical;suggestive",
-  "eminent|adjective|of a person famous and respected within a particular sphere or profession.|The eminent scientist was invited to speak at the international conference.|famous;respected;distinguished;prominent",
-  "emit|verb|produce and discharge something, especially gas or radiation.|The dying star began to emit a strange pulse of energy that baffled astronomers.|discharge;release;vent;exude",
-  "emphatic|adjective|showing or giving emphasis; expressing something forcibly and clearly.|The coach was emphatic about the importance of teamwork in achieving victory.|forceful;firm;decisive;vigorous",
-  "empirical|adjective|based on, concerned with, or verifiable by observation or experience rather than theory or pure logic.|The researchers sought empirical evidence to support their hypothesis.|observed;practical;factual;verified",
-  "endow|verb|provide with a quality, ability, or asset.|The philanthropist chose to endow the university with a new research facility.|gift;bless;grant;bestow",
-  "endure|verb|suffer something painful or difficult patiently.|The explorers had to endure extreme cold and hunger during their journey.|withstand;tolerate;suffer;undergo",
-  "entail|verb|involve something as a necessary or inevitable part or consequence.|Starting a new business often entails a significant amount of financial risk.|involve;require;necessitate;demand",
-  "entrenched|adjective|of an attitude, habit, or belief firmly established and difficult or unlikely to change.|The old ways of thinking were deeply entrenched in the local culture.|established;fixed;ingrained;rooted",
-  "enumerate|verb|mention a number of things one by one.|The report proceeds to enumerate the various reasons for the project's failure.|list;itemise;detail;recount",
-  "envy|noun|a feeling of discontented or resentful longing aroused by someone else's possessions, qualities, or luck.|The student felt a pang of envy when she saw her friend's high test score.|jealousy;resentment;grudge;longing",
-  "erratic|adjective|not even or regular in pattern or movement; unpredictable.|The stock market's erratic behavior made investors nervous about the future.|unpredictable;irregular;unstable;wild",
-  "establish|verb|set up on a firm or permanent basis.|The company sought to establish a new headquarters in the heart of the city.|create;found;found;institute",
-  "evoke|verb|bring or recall to the conscious mind.|The smell of fresh bread can often evoke memories of childhood.|summon;inspire;induce;trigger",
-  "exacerbate|verb|make a problem, bad situation, or negative feeling worse.|The lack of communication only served to exacerbate the existing tension between the two groups.|worsen;aggravate;inflame;intensify",
-  "excel|verb|be exceptionally good at or proficient in an activity or subject.|The student began to excel in her science classes after she started the internship.|shine;surpass;exceed;transcend",
-  "exert|verb|apply or bring to bear a force, influence, or quality.|The government must exert more pressure on companies to reduce their carbon emissions.|apply;wield;exercise;utilize",
-  "exhilarating|adjective|making one feel very happy, animated, or elated; thrilling.|Skydiving is an exhilarating experience that many people find life-changing.|thrilling;exciting;elating;animated",
-  "expend|verb|spend or use up a resource such as money, time, or energy.|We should not expend any more effort on a project that is clearly going to fail.|spend;consume;use;dissipate",
-  "exploit|verb|make full use of and derive benefit from a resource; use a situation or person in an unfair or selfish way.|The company was accused of trying to exploit its workers by paying them very low wages.|utilize;harness;use;abuse",
-  "facilitate|verb|make an action or process easy or easier.|The new software was designed to facilitate better communication between departments.|aid;help;ease;assist",
-  "feasibility|noun|the state or degree of being easily or conveniently done.|The engineers are currently studying the feasibility of building a bridge across the bay.|viability;practicability;possibility;utility",
-  "ferociously|adverb|in a savagely fierce, cruel, or violent manner.|The lion defended its territory ferociously against the intruders.|fiercely;savagely;violently;wildly",
-  "fiscal|adjective|relating to government revenue, especially taxes.|The government announced a new fiscal policy aimed at reducing the national debt.|financial;monetary;budgetary;economic",
-  "flourish|verb|of a person, animal, or other living organism grow or develop in a healthy or vigorous way.|The small business began to flourish after it moved to a more central location.|thrive;prosper;grow;bloom",
-  "fluctuate|verb|rise and fall irregularly in number or amount.|The price of oil tends to fluctuate based on global supply and demand.|vary;shift;vacillate;waver",
-  "foment|verb|instigate or stir up an undesirable or violent sentiment or course of action.|The extremist group tried to foment revolution among the local population.|instigate;incite;provoke;spur",
-  "foreseeable|adjective|able to be foreseen or predicted.|There are no major changes planned for the company in the foreseeable future.|predictable;expected;likely;anticipated",
-  "frankly|adverb|in an open, honest, and direct manner.|Frankly, I think the plan is flawed and needs to be completely redesigned.|honestly;candidly;directly;openly",
-  "freewheel|verb|act or move in a relaxed or casual way, without planning or restraint.|The young couple spent the summer freewheeling across the country in an old van.|drift;coast;glide;relax",
-  "fundamental|adjective|forming a necessary base or core; of central importance.|Education is a fundamental human right that should be available to everyone.|essential;basic;core;primary",
-  "galvanizing|adjective|thrilling, exciting, stimulating.|The speaker gave a galvanizing talk that inspired the audience to take action.|inspiring;exciting;thrilling;stirring",
-  "geriatric|adjective|relating to old people, especially with regard to their healthcare.|The hospital opened a new geriatric ward to better serve the aging population.|elderly;aging;senior;old",
-  "hostile|adjective|unfriendly; antagonistic.|The local residents were hostile toward the newcomers, making them feel unwelcome.|aggressive;unfriendly;antagonistic;hostile",
-  "hypothetical|adjective|of, based on, or serving as a hypothesis.|The scientist used a hypothetical situation to explain how the theory worked.|theoretical;imaginary;supposed;speculative",
-  "ignominious|adjective|deserving or causing public disgrace or shame.|The team's defeat was ignominious, as they lost by a record-breaking margin.|shameful;disgraceful;humiliating;dishonorable",
-  "impart|verb|make information known; communicate.|The teacher sought to impart her knowledge of history to her students.|convey;transmit;communicate;give",
-  "impartiality|noun|equal treatment of all rivals or disputants; fairness.|The judge was praised for his impartiality and his commitment to justice.|fairness;neutrality;objectivity;equity",
-  "imposing|adjective|grand and impressive in appearance.|The castle was an imposing structure that could be seen from miles away.|impressive;grand;majestic;stately",
-  "imposition|noun|the action or process of imposing something or of being imposed.|The new tax was seen as an unfair imposition on the local businesses.|burden;intrusion;infliction;task",
-  "imprudent|adjective|not showing care for the consequences of an action; rash.|It would be imprudent to invest all of your money in a single company.|rash;reckless;unwise;careless",
-  "incite|verb|encourage or stir up violent or unlawful behavior.|The leader was accused of trying to incite a riot among his followers.|provoke;instigate;stir;rouse",
-  "indifference|noun|lack of interest, concern, or sympathy.|The public's indifference to the issue made it difficult to pass the new law.|apathy;unconcern;disinterest;coolness",
-  "indiscriminately|adverb|in a random manner; unsystematically.|The hunter fired indiscriminately into the woods, risking the safety of others.|randomly;haphazardly;blindly;aimlessly",
-  "indulge|verb|allow oneself to enjoy the pleasure of.|After a long week of work, she decided to indulge in a luxurious spa day.|pamper;spoil;gratify;humor",
-  "infer|verb|deduce or conclude information from evidence and reasoning rather than from explicit statements.|From the witness's testimony, the jury was able to infer that the suspect was lying.|deduce;conclude;reason;derive",
-  "innovative|adjective|of a product, idea, etc. featuring new methods; advanced and original.|The company is known for its innovative approach to software development.|original;novel;groundbreaking;new",
-  "insatiable|adjective|of an appetite or desire impossible to satisfy.|The young boy had an insatiable curiosity about the natural world.|unquenchable;voracious;greedy;limitless",
-  "inversion|noun|the action of inverting something or the state of being inverted.|The poem uses a strange inversion of word order to create a unique rhythm.|reversal;transpose;flip;switch",
-  "invoke|verb|cite or appeal to someone or something as an authority for an action or in support of an argument.|The lawyer chose to invoke the constitution in support of his client's rights.|summon;cite;appeal;call",
-  "irreconcilable|adjective|of ideas, facts, or statements representing findings or points of view that are so different from each other that they cannot be made compatible.|The two sides had irreconcilable differences that made a compromise impossible.|conflicting;clashing;incompatible;opposing",
-  "lament|verb|a passionate expression of grief or sorrow.|The poet wrote a moving lament for the loss of his childhood home.|mourn;grieve;bewail;sorrow",
-  "locomotion|noun|movement or the ability to move from one place to another.|Steam engines revolutionized locomotion, allowing people to travel further and faster.|movement;travel;motion;transit",
-  "lucrative|adjective|producing a great deal of profit.|The tech industry is a highly lucrative field for young entrepreneurs.|profitable;fruitful;gainful;rewarding",
-  "malicious|adjective|characterizing a desire to harm others.|The malicious rumor was designed to destroy the politician's reputation.|spiteful;hostile;cruel;venomous",
-  "malleable|adjective|able to be hammered or pressed permanently out of shape without breaking or cracking.|Gold is a very malleable metal, making it ideal for creating intricate jewelry.|pliable;flexible;supple;ductile",
-  "materialistic|adjective|excessively concerned with physical comforts and the acquisition of wealth and property, rather than with spiritual or intellectual values.|The modern world is often criticized for being too materialistic and shallow.|worldly;greedy;consumerist;money-oriented",
-  "melodramatic|adjective|characteristic of melodrama, especially in being exaggerated, sensationalized, or overemotional.|Her reaction to the minor news was completely melodramatic and unnecessary.|exaggerated;theatrical;emotional;sensational",
-  "modest|adjective|unassuming or moderate in the estimation of one's abilities or achievements.|Despite her great success, she remained a modest and humble person.|humble;unassuming;moderate;simple",
-  "modification|noun|the action of modifying something.|The architect made a minor modification to the plans to improve the natural lighting.|change;adjustment;alteration;revision",
-  "momentous|adjective|of great importance or significance, especially in its bearing on the future.|The moon landing was a momentous event in the history of human exploration.|significant;important;crucial;historic",
-  "novel|adjective|new or unusual in an interesting way.|The scientist proposed a novel theory that challenged long-held beliefs.|new;original;unique;fresh",
-  "nuance|noun|a subtle difference in or shade of meaning, expression, or sound.|A skilled actor can convey every nuance of a character's complex emotions.|shade;subtlety;nicety;distinction",
-  "null|adjective|having no legal or binding force; invalid.|The contract was declared null and void after it was discovered to be fraudulent.|invalid;void;useless;nothing",
-  "objectivity|noun|the quality of being objective.|A journalist must strive for objectivity, even when reporting on controversial issues.|detachment;impartiality;fairness;neutrality",
-  "obsolete|adjective|no longer produced or used; out of date.|The advent of the smartphone made the traditional pager completely obsolete.|outdated;ancient;defunct;old",
-  "omnipresent|adjective|widely or constantly encountered; common or widespread.|The internet is now omnipresent in modern life, connecting people across the globe.|ubiquitous;widespread;common;constant",
-  "opined|verb|state or assert to be one's opinion.|The critic opined that the movie was the best of the year.|stated;suggested;claimed;thought",
-  "ornate|adjective|made in an intricate shape or decorated with complex patterns.|The cathedral featured ornate carvings that depicted scenes from history.|elaborate;decorative;fancy;complex",
-  "oust|verb|drive out or expel someone from a position or place.|The board of directors voted to oust the CEO after a series of financial failures.|expel;remove;eject;dismiss",
-  "paramount|adjective|more important than anything else; supreme.|The safety of the passengers is paramount and must always be our first priority.|supreme;utmost;primary;chief",
-  "peculiar|adjective|strange or odd; unusual.|The bird had a peculiar song that the researchers had never heard before.|strange;odd;weird;unique",
-  "perish|verb|suffer death, typically in a violent, sudden, or untimely way.|The ancient civilization began to perish after a series of natural disasters.|die;expire;vanish;succumb",
-  "perpetuate|verb|make something, typically an undesirable situation or an unfounded belief, continue indefinitely.|The movie was criticized for its tendency to perpetuate negative stereotypes.|continue;preserve;sustain;prolong",
-  "pervasive|adjective|especially of an unwelcome influence or physical effect spreading widely throughout an area or a group of people.|The pervasive smell of smoke filled the entire house after the fire.|widespread;common;rife;general",
-  "pessimistic|adjective|tending to see the worst aspect of things or believe that the worst will happen.|The economist gave a pessimistic forecast for the country's economic future.|gloomy;negative;cynical;dark",
-  "plausible|adjective|of an argument or statement seeming reasonable or probable.|The suspect provided a plausible explanation for his whereabouts on the night of the crime.|reasonable;credible;believable;likely",
-  "postulate|verb|suggest or assume the existence, fact, or truth of something as a basis for reasoning, discussion, or belief.|Scientists postulate that there may be life on other planets in our galaxy.|assume;suggest;propose;theorize",
-  "potent|adjective|having great power, influence, or effect.|The medicine was so potent that a single dose was enough to cure the disease.|powerful;strong;effective;mighty",
-  "pragmatic|adjective|dealing with things sensibly and realistically in a way that is based on practical rather than theoretical considerations.|The manager took a pragmatic approach to the problem, focusing on immediate solutions.|practical;realistic;sensible;efficient",
-  "precedent|noun|an earlier event or action that is regarded as an example or guide to be considered in subsequent similar circumstances.|The judge's decision set a precedent for future cases involving civil rights.|example;guide;standard;model",
-  "precursor|noun|a person or thing that comes before another of the same kind; a forerunner.|The small protest was a precursor to the massive revolution that followed.|forerunner;ancestor;antecedent;harbinger",
-  "presumptuous|adjective|of a person or their behavior failing to observe the limits of what is permitted or appropriate.|It would be presumptuous of me to offer advice to someone so much more experienced.|bold;arrogant;audacious;forward",
-  "principle|noun|a fundamental truth or proposition that serves as the foundation for a system of belief or behavior or for a chain of reasoning.|The central principle of democracy is that every citizen has an equal voice.|rule;belief;doctrine;tenet",
-  "proficiency|noun|a high degree of skill; expertise.|The job requires a high level of proficiency in at least two foreign languages.|skill;expertise;ability;competence",
-  "prolific|adjective|present in large numbers or quantities; plentiful.|The author was incredibly prolific, writing over fifty novels in his lifetime.|productive;plentiful;abundant;fruitful",
-  "promulgate|verb|promote or make widely known an idea or cause.|The organization sought to promulgate the importance of environmental conservation.|promote;spread;broadcast;publicize",
-  "propagate|verb|spread and promote an idea, theory, etc. widely.|The extremist group used social media to propagate their dangerous ideology.|spread;breed;reproduce;multiply",
-  "prosaic|adjective|having the style or diction of prose; lacking poetic beauty.|The author's prosaic style made the story feel very grounded and realistic.|ordinary;dull;plain;commonplace",
-  "prosperous|adjective|successful in material terms; flourishing financially.|The small town became prosperous after a new factory was built nearby.|wealthy;thriving;rich;successful",
-  "provocative|adjective|causing annoyance, anger, or another strong reaction, especially deliberately.|The artist's provocative work was designed to challenge the viewer's beliefs.|challenging;annoying;stimulating;edgy",
-  "qualitative|adjective|relating to, measuring, or measured by the quality of something rather than its quantity.|The study focused on qualitative data, such as interviews and personal observations.|descriptive;subjective;quality-based;relative",
-  "quantitative|adjective|relating to, measuring, or measured by the quantity of something rather than its quality.|The researchers collected quantitative data, such as test scores and demographic information.|numerical;statistical;measurable;exact",
-  "quirk|noun|a peculiar behavioral habit.|Every person has their own unique quirks that make them who they are.|habit;eccentricity;oddity;mannerism",
-  "ramify|verb|form branches or offshoots; spread or branch out.|The new policy is expected to ramify through every department of the company.|branch;spread;divide;expand",
-  "rash|adjective|displaying or proceeding from a lack of careful consideration of the possible consequences of an action.|The young man made a rash decision to quit his job without having another one lined up.|reckless;hasty;careless;foolish",
-  "raw|adjective|in its natural state; not yet processed or purified.|The artist used raw materials, such as clay and wood, to create her sculptures.|natural;untreated;crude;unprocessed",
-  "readily|adverb|without hesitation or reluctance; willingly.|The student readily accepted the challenge of taking the advanced class.|willingly;easily;promptly;eagerly",
-  "reconsideration|noun|the action of considering something again; review.|The committee's decision is currently under reconsideration by the board.|review;reassessment;re-evaluation;rethink",
-  "reform|verb|make changes in something, typically a social, political, or economic institution or practice, in order to improve it.|The government sought to reform the healthcare system to make it more accessible.|improve;correct;reorganize;fix",
-  "refute|verb|prove a statement or theory to be wrong or false; disprove.|The scientist was able to refute the theory with a single well-designed experiment.|disprove;deny;contradict;rebut",
-  "reinforce|verb|strengthen or support, especially with additional personnel or material.|The general decided to reinforce the troops at the front line with fresh supplies.|strengthen;support;bolster;buttress",
-  "reluctantly|adverb|in an unwilling and hesitant way.|The child reluctantly agreed to eat his vegetables after his parents promised him dessert.|unwillingly;hesitantly;grudgingly;slowly",
-  "renounce|verb|formally declare one's abandonment of a claim, right, or possession.|The king was forced to renounce his throne after the revolution.|abandon;reject;give up;forsake",
-  "reproach|verb|address someone in such a way as to express disapproval or disappointment.|The teacher chose to reproach the student for his lack of effort in class.|criticize;blame;scold;chide",
-  "repudiate|verb|refuse to accept or be associated with.|The organization chose to repudiate the extremist views of its former leader.|reject;disown;deny;renounce",
-  "retention|noun|the continued possession, use, or control of something.|The company's focus on employee retention helped it build a strong and loyal team.|holding;keeping;possession;saving",
-  "satiated|adjective|satisfied to the full; sated.|After the massive feast, the guests felt completely satiated and content.|full;satisfied;glutted;stuffed",
-  "savvy|adjective|shrewd and knowledgeable; having common sense and good judgment.|The tech-savvy teenager was able to fix the computer in just a few minutes.|smart;shrewd;astute;knowledgeable",
-  "scandalous|adjective|causing general public outrage by a perceived offense against morality or law.|The politician's scandalous behavior led to his resignation from office.|disgraceful;shameful;outrageous;shocking",
-  "scorn|noun|the feeling or belief that someone or something is worthless or despicable; contempt.|The critic looked at the low-budget movie with a sense of open scorn.|contempt;disdain;derision;mockery",
-  "scrupulous|adjective|of a person or process diligent, thorough, and extremely attentive to details.|The accountant was scrupulous in her record-keeping, ensuring that every penny was accounted for.|precise;thorough;diligent;honest",
-  "scrutinize|verb|examine or inspect closely and thoroughly.|The detective began to scrutinize every detail of the crime scene for clues.|examine;inspect;analyze;study",
-  "secrete|verb|produce and discharge a substance.|The gland is responsible for secreting a hormone that regulates metabolism.|discharge;release;exude;produce",
-  "sentiment|noun|a view of or attitude toward a situation or event; an opinion.|The sentiment among the local population was strongly against the new development.|opinion;feeling;attitude;belief",
-  "sheer|adjective|nothing other than; unmitigated.|The sheer size of the mountain was enough to intimidate even the most experienced climbers.|absolute;total;pure;steep",
-  "sinister|adjective|giving the impression that something harmful or evil is happening or will happen.|The dark, abandoned house had a sinister feel that made everyone nervous.|evil;threatening;menacing;dark",
-  "solidarity|noun|unity or agreement of feeling or action, especially among individuals with a common interest; mutual support within a group.|The workers showed their solidarity by going on strike together.|unity;agreement;harmony;unanimity",
-  "sparingly|adverb|in small quantities.|The chef used the expensive spice sparingly to avoid overpowering the other flavors.|economically;lightly;moderately;thinly",
-  "spawn|verb|produce or generate, especially in large numbers.|The successful movie spawned a series of sequels and a television show.|produce;generate;breed;create",
-  "spur|verb|give an incentive or encouragement to someone.|The coach's speech served to spur the team on to victory in the final minutes.|encourage;prompt;stimulate;incite",
-  "squalid|adjective|of a place extremely dirty and unpleasant, especially as a result of poverty or neglect.|The family lived in a squalid apartment with no running water or electricity.|dirty;filthy;wretched;poor",
-  "stark|adjective|severe or bare in appearance or outline.|The stark contrast between the two landscapes was visible even from space.|bare;sharp;severe;harsh",
-  "static|adjective|lacking in movement, action, or change, especially in a way viewed as undesirable or uninteresting.|The plot of the movie was static and boring, with no real character development.|fixed;stationary;unchanging;motionless",
-  "subordinate|adjective|lower in rank or position.|The manager's subordinate was responsible for handling the daily paperwork.|junior;lower;inferior;secondary",
-  "subsequently|adverb|after a particular thing has happened; afterward.|The suspect was subsequently arrested and charged with the crime.|afterward;later;next;following",
-  "substantial|adjective|of considerable importance, size, or worth.|The company received a substantial investment from a group of venture capitalists.|significant;important;large;solid",
-  "substantiate|verb|provide evidence to support or prove the truth of.|The witness was unable to substantiate her claims about the night of the robbery.|prove;verify;confirm;validate",
-  "subtle|adjective|especially of a change or distinction so delicate or precise as to be difficult to analyze or describe.|The artist used subtle changes in color to create a sense of depth in the painting.|faint;slight;delicate;understated",
-  "sufficient|adjective|enough; adequate.|The evidence provided by the witness was sufficient to convict the suspect.|adequate;enough;ample;plenty",
-  "surly|adjective|bad-tempered and unfriendly.|The surly waiter made the customers feel unwelcome and uncomfortable.|grumpy;sullen;hostile;rude",
-  "surmount|verb|overcome a difficulty or obstacle.|The athlete had to surmount several major injuries to reach the Olympics.|overcome;conquer;master;defeat",
-  "susceptible|adjective|likely or liable to be influenced or harmed by a particular thing.|The young child was particularly susceptible to the flu during the winter months.|vulnerable;exposed;open;prone",
-  "tact|noun|adroitness and sensitivity in dealing with others or with difficult issues.|A good diplomat must have a great deal of tact when negotiating sensitive treaties.|sensitivity;diplomacy;finesse;skill",
-  "taut|adjective|stretched or pulled tight; not slack.|The rope was pulled taut across the river to allow the explorers to cross.|tight;stretched;tense;firm",
-  "teeming|adjective|be full of or swarming with.|The coral reef was teeming with life, from colorful fish to strange sea creatures.|swarming;packed;full;crowded",
-  "tentative|adjective|not certain or fixed; provisional.|The team made a tentative plan for the expedition, knowing that it might change.|hesitant;provisional;uncertain;proposing",
-  "transparent|adjective|allowing light to pass through so that objects behind can be distinctly seen; easy to perceive or detect.|The glass was so transparent that it was difficult to tell it was even there.|clear;obvious;explicit;open",
-  "treacherous|adjective|guilty of or involving betrayal or deception.|The treacherous mountain pass was full of hidden dangers and loose rocks.|dangerous;disloyal;unfaithful;unstable",
-  "tremendous|adjective|very great in amount, scale, or intensity.|The news of the discovery caused a tremendous amount of excitement in the scientific community.|huge;massive;vast;immense",
-  "ubiquitous|adjective|present, appearing, or found everywhere.|The ubiquitous influence of social media has changed how we communicate.|widespread;common;constant;omnipresent",
-  "unadorned|adjective|not adorned; plain.|The room was unadorned and simple, with only a bed and a single chair.|plain;simple;austere;stark",
-  "undermine|verb|erode the base or foundation of something; lessen the effectiveness, power, or ability of, especially gradually or insidiously.|The lack of funding began to undermine the research team's ability to complete their study.|weaken;damage;erode;subvert",
-  "underscore|verb|emphasize.|The speaker chose to underscore the importance of education in achieving success.|emphasize;highlight;stress;accent",
-  "undulate|verb|move with a smooth wavelike motion.|The fields of wheat began to undulate in the gentle breeze.|ripple;wave;swell;billow",
-  "unilateral|adjective|of an action or decision performed by or affecting only one person, group, or country involved in a particular situation, without the agreement of another or the others.|The country made a unilateral decision to withdraw from the treaty.|independent;single-sided;lone;one-sided",
-  "unjust|adjective|not based on or behaving according to what is morally right and fair.|The laws were seen as unjust and were eventually overturned after a series of protests.|unfair;wrong;cruel;prejudiced",
-  "unmitigated|adjective|absolute; unqualified.|The project was an unmitigated disaster from start to finish.|absolute;complete;total;pure",
-  "unprecedented|adjective|never done or known before.|The rapid growth of the company was unprecedented in the history of the industry.|new;original;unusual;extraordinary",
-  "uphold|verb|confirm or support something which has been questioned.|The supreme court voted to uphold the lower court's decision.|maintain;support;sustain;confirm",
-  "utilitarian|adjective|designed to be useful or practical rather than attractive.|The building's utilitarian design was criticized for its lack of aesthetic appeal.|practical;useful;functional;efficient",
-  "vacillate|verb|alternate or waver between different opinions or actions; be indecisive.|The manager tended to vacillate between two different strategies, making it difficult for his team to proceed.|waver;hesitate;dither;fluctuate",
-  "validate|verb|check or prove the validity or accuracy of something.|The scientist sought to validate his results through a series of independent experiments.|confirm;verify;authenticate;prove",
-  "venerable|adjective|accorded a great deal of respect, especially because of age, wisdom, or character.|The venerable professor was beloved by generations of students.|respected;honored;distinguished;ancient",
-  "viability|noun|ability to work successfully.|The engineers are currently studying the viability of using solar energy to power the entire city.|feasibility;growth;survival;utility",
-  "vital|adjective|absolutely necessary or important; essential.|Education is a vital part of a successful and fulfilling life.|essential;critical;crucial;important",
-  "vow|verb|solemnly promise to do a specified thing.|The politician chose to vow that he would lower taxes if elected.|promise;swear;pledge;oath",
-  "warrant|verb|justify or necessitate a certain course of action.|The seriousness of the issue warrants a thorough and immediate investigation.|justify;necessitate;call-for;require",
-  "yield|verb|produce or provide a natural, agricultural, or industrial product.|The small farm was able to yield enough food to support the entire local community.|produce;provide;surrender;give"
-];
+import { ALL_WORDS_RAW } from './data';
 
 /**
- * MASTER CORE HYDRATION
- * Locked IDs for Eternal Protocol V17
+ * TITAN INTELLIGENCE CORE - v5.0.0
+ * Using User-Provided Vocabulary Base
  */
+
+export const parseCSVLine = (line: string): string[] => {
+  const fields = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') { inQuotes = !inQuotes; }
+    else if (char === ',' && !inQuotes) { fields.push(cur.trim()); cur = ""; }
+    else { cur += char; }
+  }
+  fields.push(cur.trim());
+  return fields;
+};
+
 export const GET_MASTER_CORE = (): Word[] => {
-  const base: Word[] = CURATED_DATA.map((raw, i) => {
-    const parts = raw.split('|');
+  const base: Word[] = ALL_WORDS_RAW.map((raw, i) => {
+    const parts = parseCSVLine(raw);
     const term = parts[0] || "";
-    const rawSyns = parts[4] || "";
+    
+    // Mapping from CSV columns:
+    // 0: Term
+    // 1: PartOfSpeech
+    // 2: Definition
+    // 3: Example
+    // 4: Synonyms
+    // 9: SAT_Level (Core/Medium/Advanced)
+    // 10: Frequency_Tier (Est. High/Mid/Low)
+    
+    const rawLevel = parts[9] || 'Medium';
+    const satLevel = (rawLevel.includes('Advanced') ? 'Advanced' : rawLevel.includes('Core') ? 'Core' : 'Medium') as 'Core' | 'Medium' | 'Advanced';
+    
+    const rawTier = parts[10] || 'Mid';
+    const frequencyTier = (rawTier.includes('High') ? 'High' : rawTier.includes('Low') ? 'Low' : 'Mid') as 'High' | 'Mid' | 'Low';
+
     return {
-      id: `sat-id-locked-${term.toLowerCase().replace(/\s/g, '-')}`, // DETERMINISTIC KEY
+      id: `sat-id-locked-${term.toLowerCase().replace(/\s/g, '-')}-${i}`,
       term: term,
       partOfSpeech: parts[1] || "noun",
       definition: parts[2] || "",
       example: parts[3] || "Application required for deep mastery.",
-      synonyms: rawSyns ? rawSyns.split(';').map(s => s.trim()) : [],
-      satLevel: (term.length > 8 ? 'Advanced' : term.length > 5 ? 'Medium' : 'Core') as 'Core' | 'Medium' | 'Advanced',
-      frequencyTier: 'High' as 'High' | 'Mid' | 'Low'
+      synonyms: parts[4] ? parts[4].split(';').map(s => s.trim()) : [],
+      satLevel: satLevel,
+      frequencyTier: frequencyTier,
+      difficultyScore: parts[11] ? parseFloat(parts[11]) : undefined,
+      difficultyBand: parts[12],
+      usageFrequencyScore: parts[13] ? parseFloat(parts[13]) : undefined,
+      morphology: parts[14],
+      academicDomain: parts[15],
+      multipleMeaningsFlag: parts[16] === 'TRUE',
+      distractorType: parts[17]
     };
   });
-
-  const totalTarget = 2250;
-  const originalLength = base.length;
-  
-  if (base.length < totalTarget) {
-    const variants = ["Theory", "Analysis", "Logic", "Protocol", "Context", "Paradigm", "Concept", "Basis", "Structure", "Foundation"];
-    for (let i = 0; i < totalTarget - originalLength; i++) {
-      const template = base[i % originalLength];
-      const variant = variants[Math.floor(i / originalLength) % variants.length];
-      const newTerm = `${template.term} ${variant}`;
-      base.push({
-        ...template,
-        id: `sat-id-locked-${newTerm.toLowerCase().replace(/\s/g, '-')}`,
-        term: newTerm,
-        synonyms: [], // Generated variants keep empty synonyms for lean storage
-        satLevel: i % 3 === 0 ? 'Advanced' : 'Medium'
-      });
-    }
-  }
 
   return base;
 };
