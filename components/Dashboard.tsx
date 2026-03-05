@@ -56,6 +56,13 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
     return counts;
   }, [progress.wordMastery]);
 
+  const weakWords = useMemo(() => {
+    return Object.values(progress.wordStats)
+      .filter(s => s.wrong > 0)
+      .sort((a, b) => b.wrong - a.wrong)
+      .slice(0, 10);
+  }, [progress.wordStats]);
+
   const domainMastery = useMemo(() => {
     const domains: Record<string, { total: number; mastered: number }> = {};
     words.forEach(w => {
@@ -131,7 +138,7 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
             <div className="flex flex-wrap justify-center lg:justify-start gap-3">
                <div className="flex items-center gap-2 bg-indigo-500/20 text-indigo-400 px-5 py-2 rounded-full border border-indigo-500/20">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-[10px] font-black uppercase tracking-widest italic">Protocol V41 Active</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest italic">Protocol V42 Active</span>
                </div>
                <button 
                  onClick={shareApp}
@@ -427,34 +434,73 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
               </button>
             </div>
             
-            <div className="flex-1 p-8 md:p-12 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {domainMastery.map(dom => (
-                  <div key={dom.name} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-4 hover:border-indigo-200 transition-all group">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{dom.name}</p>
-                        <h5 className="text-3xl font-black text-slate-900">{dom.percent}%</h5>
+            <div className="flex-1 p-8 md:p-12 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 space-y-12">
+              <section className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Academic Domain Breakdown</h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {domainMastery.map(dom => (
+                    <div key={dom.name} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-4 hover:border-indigo-200 transition-all group">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{dom.name}</p>
+                          <h5 className="text-3xl font-black text-slate-900">{dom.percent}%</h5>
+                        </div>
+                        <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${dom.percent > 80 ? 'bg-emerald-100 text-emerald-600' : dom.percent > 40 ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-500'}`}>
+                          {dom.percent > 80 ? 'Elite' : dom.percent > 40 ? 'Stable' : 'Initial'}
+                        </div>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${dom.percent > 80 ? 'bg-emerald-100 text-emerald-600' : dom.percent > 40 ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-500'}`}>
-                        {dom.percent > 80 ? 'Elite' : dom.percent > 40 ? 'Stable' : 'Initial'}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
+                            <span>{dom.mastered} Mastered</span>
+                            <span>{dom.total} Total</span>
+                        </div>
+                        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-indigo-600 rounded-full transition-all duration-1000" 
+                              style={{ width: `${dom.percent}%` }} 
+                            />
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                       <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
-                          <span>{dom.mastered} Mastered</span>
-                          <span>{dom.total} Total</span>
-                       </div>
-                       <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-indigo-600 rounded-full transition-all duration-1000" 
-                            style={{ width: `${dom.percent}%` }} 
-                          />
-                       </div>
-                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {weakWords.length > 0 ? (
+                <section className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-rose-500">Critical Weaknesses (Top 10)</h4>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ranked by Error Frequency</p>
                   </div>
-                ))}
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {weakWords.map(stat => (
+                      <div key={stat.wordId} className="p-6 bg-rose-50/50 rounded-3xl border border-rose-100 flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <p className="text-lg font-black text-slate-900">{stat.term}</p>
+                          <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest">{stat.wrong} Errors / {stat.attempts} Attempts</p>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="text-xl font-black text-rose-600">{Math.round((stat.wrong / stat.attempts) * 100)}%</span>
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Fail Rate</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : (
+                <section className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Critical Weaknesses</h4>
+                  </div>
+                  <div className="p-12 bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-200 text-center">
+                    <p className="text-2xl mb-2">🎯</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No weaknesses detected yet.</p>
+                    <p className="text-[10px] text-slate-400 mt-2">Complete more quizzes to identify areas for improvement.</p>
+                  </div>
+                </section>
+              )}
             </div>
 
             <div className="p-8 md:p-12 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">

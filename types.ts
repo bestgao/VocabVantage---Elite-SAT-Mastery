@@ -27,12 +27,25 @@ export interface ActivityEntry {
   xpGained: number;
 }
 
+export interface WordStat {
+  wordId: string;
+  term: string;
+  attempts: number;
+  correct: number;
+  wrong: number;
+  streak: number;
+  lastResult: 'correct' | 'wrong' | 'none';
+  lastSeenAt: number;
+  masteryLevel: MasteryLevel;
+}
+
 export interface UserProgress {
   version: number;
   revision: number; // Atomic counter for V17+
   updatedAt: number;
   wordMastery: Record<string, MasteryLevel>;
   wordSRS: Record<string, WordSRS>;
+  wordStats: Record<string, WordStat>;
   activityLedger: Record<string, ActivityEntry>; 
   streak: number;
   lastActive: string;
