@@ -37,7 +37,7 @@ export const INITIAL_PROGRESS: UserProgress = {
     levels: ['Core', 'Medium', 'Advanced'], 
     freqs: ['High', 'Mid', 'Low'], 
     masteries: [0, 1, 2],
-    domains: ['General', 'Science', 'History', 'Literature', 'Social Studies'],
+    domains: [], // Empty means "All" in V42
     highYieldOnly: false
   },
   customWords: []
@@ -109,6 +109,16 @@ export const hydrateVault = (): BootResult => {
         master.revision = (legacy.revision || 0) + 1;
         break;
       }
+    }
+  }
+
+  // [V42] Domain Migration: Clear stale domains from lastConfig
+  if (master.lastConfig && master.lastConfig.domains) {
+    const staleDomains = ['General', 'Science', 'History', 'Literature', 'Social Studies'];
+    const hasStale = master.lastConfig.domains.some(d => staleDomains.includes(d));
+    if (hasStale) {
+      logs.push(`[V42] Cleared stale domains from config`);
+      master.lastConfig.domains = []; // Reset to "All"
     }
   }
 

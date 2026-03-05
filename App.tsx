@@ -227,8 +227,12 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       await batch.commit();
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 3000);
-    } catch (e) {
-      console.error("Cloud sync failed", e);
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        console.warn("Cloud sync restricted: Local data will be used for this session.");
+      } else {
+        console.error("Cloud sync failed", e);
+      }
       setSyncStatus('error');
     }
   };
@@ -245,8 +249,12 @@ const App: React.FC<AppProps> = ({ bootData }) => {
             lastActive: new Date().toISOString()
           }, { merge: true });
           console.log("Cloud Sync Successful");
-        } catch (e) {
-          console.error("Cloud Sync Failed:", e);
+        } catch (e: any) {
+          if (e.code === 'permission-denied') {
+            // Silently fail as the main syncToCloud handles the warning
+          } else {
+            console.error("Cloud Sync Failed:", e);
+          }
         }
       };
       syncProgress();
@@ -727,7 +735,11 @@ const App: React.FC<AppProps> = ({ bootData }) => {
             progress={progress.wordMastery} 
             lastConfig={progress.lastConfig} 
             onBack={() => setScreen(AppScreen.DASHBOARD)} 
-            onStart={(w) => { setSessionWords(w); setScreen(AppScreen.LEARN); }} 
+            onStart={(w, cfg) => { 
+              setSessionWords(w); 
+              updateProgress(prev => ({ ...prev, lastConfig: cfg }), true);
+              setScreen(AppScreen.LEARN); 
+            }} 
           />
         )}
       </main>

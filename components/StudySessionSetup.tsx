@@ -12,22 +12,20 @@ interface StudySessionSetupProps {
 }
 
 const StudySessionSetup: React.FC<StudySessionSetupProps> = ({ words, progress, lastConfig, onStart, onBack }) => {
+  const allDomains = Array.from(new Set(words.map(w => w.academicDomain || 'General'))).sort();
+
   const [levels, setLevels] = useState<string[]>(lastConfig.levels);
   const [freqs, setFreqs] = useState<string[]>(lastConfig.freqs);
   const [masteries, setMasteries] = useState<number[]>(lastConfig.masteries);
-  const [domains, setDomains] = useState<string[]>(lastConfig.domains || ['General']);
+  const [domains, setDomains] = useState<string[]>(() => {
+    const last = lastConfig.domains || [];
+    // If last config domains don't exist in current library, default to empty (All)
+    const validLast = last.filter(d => allDomains.includes(d));
+    return validLast.length > 0 ? validLast : [];
+  });
   const [highYieldOnly, setHighYieldOnly] = useState<boolean>(!!lastConfig.highYieldOnly);
 
-  const toggle = (list: any[], set: Function, val: any) => {
-    if (list.includes(val)) {
-      set(list.filter(v => v !== val));
-    } else {
-      set([...list, val]);
-    }
-  };
-
-  const startSession = () => {
-    const config: SessionConfig = { levels, freqs, masteries, domains, highYieldOnly };
+  const getSelection = () => {
     const selection = words.filter(w => {
       const m = progress[w.id] || 0;
       const matchesLevel = levels.length === 0 || levels.includes(w.satLevel);
@@ -39,6 +37,40 @@ const StudySessionSetup: React.FC<StudySessionSetupProps> = ({ words, progress, 
       return matchesLevel && matchesFreq && matchesMastery && matchesDomain && matchesHighYield;
     });
 
+    if (selection.length === 0 && words.length > 0) {
+      console.warn("Filter Debug:", {
+        totalWords: words.length,
+        levels,
+        freqs,
+        masteries,
+        domains,
+        highYieldOnly,
+        sampleWord: words[0] ? {
+          satLevel: words[0].satLevel,
+          frequencyTier: words[0].frequencyTier,
+          mastery: progress[words[0].id] || 0,
+          domain: words[0].academicDomain || 'General',
+          yield: words[0].usageFrequencyScore
+        } : 'none'
+      });
+    }
+    return selection;
+  };
+
+  const selectionCount = getSelection().length;
+
+  const toggle = (list: any[], set: Function, val: any) => {
+    if (list.includes(val)) {
+      set(list.filter(v => v !== val));
+    } else {
+      set([...list, val]);
+    }
+  };
+
+  const startSession = () => {
+    const config: SessionConfig = { levels, freqs, masteries, domains, highYieldOnly };
+    const selection = getSelection();
+
     if (selection.length === 0) {
       alert("No words match your current filters. Try broadening your selection (e.g., unchecking all focus areas to include everything).");
       return;
@@ -49,7 +81,13 @@ const StudySessionSetup: React.FC<StudySessionSetupProps> = ({ words, progress, 
     onStart(final, config);
   };
 
-  const allDomains = Array.from(new Set(words.map(w => w.academicDomain || 'General'))).sort();
+  const resetFilters = () => {
+    setLevels(['Core', 'Medium', 'Advanced']);
+    setFreqs(['High', 'Mid', 'Low']);
+    setMasteries([0, 1, 2]);
+    setDomains(allDomains);
+    setHighYieldOnly(false);
+  };
 
   const getMasteryLabel = (m: number) => {
     switch(m) {
@@ -75,7 +113,20 @@ const StudySessionSetup: React.FC<StudySessionSetupProps> = ({ words, progress, 
     <div className="max-w-4xl mx-auto space-y-8 md:space-y-12 px-4 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
       <div className="text-center space-y-2 md:space-y-3">
         <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight">Parameters</h2>
-        <p className="text-slate-500 font-medium text-sm">Fine-tune your training mix. Last used settings loaded.</p>
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-slate-500 font-medium text-sm">Fine-tune your training mix. Last used settings loaded.</p>
+          <div className="flex items-center gap-4">
+            <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${selectionCount > 0 ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
+              {selectionCount} Units Matched
+            </div>
+            <button 
+              onClick={resetFilters}
+              className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-colors"
+            >
+              Reset to Default
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-[2.5rem] md:rounded-[4rem] p-8 md:p-16 shadow-2xl border border-slate-100 space-y-10 md:space-y-14 relative overflow-hidden">
