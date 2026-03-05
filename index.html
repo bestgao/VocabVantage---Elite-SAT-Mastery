@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#020617" />
+    
+    <title>VocabVantage v2.9.0 - Apex</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+      body { 
+        font-family: 'Inter', sans-serif; 
+        -webkit-tap-highlight-color: transparent;
+        background-color: #f8fafc;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+      .perspective-1000 { perspective: 1000px; }
+      .backface-hidden { backface-visibility: hidden; }
+      .rotate-y-180 { transform: rotateY(180deg); }
+      .preserve-3d { transform-style: preserve-3d; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      @keyframes titan-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(0.98); }
+      }
+      .animate-titan { animation: titan-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+      
+      @keyframes confetti-fall {
+        0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+      }
+      .confetti {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background-color: #6366f1;
+        top: -10px;
+        z-index: 1000;
+        animation: confetti-fall 3s linear forwards;
+      }
+
+      button:active { transform: scale(0.96); }
+      
+      .progress-shimmer {
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        background-size: 200% 100%;
+        animation: progress-shimmer 2s infinite linear;
+      }
+      @keyframes progress-shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+
+      .selection\:bg-indigo-100::selection { background-color: #e0e7ff; }
+      .selection\:text-indigo-900::selection { color: #1e1b4b; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Point directly to the source file; Vite will handle the transpilation -->
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

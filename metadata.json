@@ -1,0 +1,5 @@
+{
+  "name": "VocabVantage - Titan Protocol V41",
+  "description": "A high-performance SAT vocabulary platform featuring 2,250 core words, space-repetition logic, and elite performance games with Firebase Auth and Firestore sync.",
+  "requestFramePermissions": []
+}
