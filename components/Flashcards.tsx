@@ -7,7 +7,7 @@ import { MASTERY_COLORS } from '../constants';
 interface FlashcardsProps {
   words: Word[];
   currentMastery: Record<string, MasteryLevel>;
-  onWordUpdate: (id: string, level: MasteryLevel) => void;
+  onWordUpdate: (id: string, level: MasteryLevel, term: string, isCorrect: boolean) => void;
   onWordPropertyUpdate: (id: string, updates: Partial<Word>) => void;
   onBack: () => void;
 }
@@ -27,7 +27,8 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
   }, [currentIndex]);
 
   const handleLevel = (lvl: MasteryLevel) => { 
-    onWordUpdate(word.id, lvl); 
+    const isCorrect = lvl >= (currentMastery[word.id] || 0);
+    onWordUpdate(word.id, lvl, word.term, isCorrect); 
     if (currentIndex < words.length - 1) {
       setCurrentIndex(prev => prev + 1);
     } else {

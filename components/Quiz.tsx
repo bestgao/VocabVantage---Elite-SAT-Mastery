@@ -6,6 +6,7 @@ import { INITIAL_WORDS } from '../constants';
 interface QuizProps {
   words: Word[];
   onFinish: (score: number) => void;
+  onWordResult: (wordId: string, term: string, isCorrect: boolean) => void;
   onBack: () => void;
 }
 
@@ -16,7 +17,7 @@ const TRAP_INSIGHTS: Record<string, string> = {
   'polysemy trap': 'This word has multiple meanings! The SAT often provides a definition for the *other* common meaning to see if you are paying attention to context.'
 };
 
-const Quiz: React.FC<QuizProps> = ({ words, onFinish, onBack }) => {
+const Quiz: React.FC<QuizProps> = ({ words, onFinish, onWordResult, onBack }) => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -64,9 +65,11 @@ const Quiz: React.FC<QuizProps> = ({ words, onFinish, onBack }) => {
     if (isAnswered) return;
     setSelectedOption(index);
     setIsAnswered(true);
-    if (index === questions[currentIndex].correctIndex) {
+    const isCorrect = index === questions[currentIndex].correctIndex;
+    if (isCorrect) {
       setScore(prev => prev + 1);
     }
+    onWordResult(questions[currentIndex].word.id, questions[currentIndex].word.term, isCorrect);
   };
 
   const handleNext = () => {

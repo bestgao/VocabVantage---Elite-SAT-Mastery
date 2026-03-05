@@ -20,6 +20,7 @@ export const INITIAL_PROGRESS: UserProgress = {
   updatedAt: Date.now(),
   wordMastery: {},
   wordSRS: {},
+  wordStats: {},
   activityLedger: {},
   streak: 1,
   lastActive: new Date().toISOString(),

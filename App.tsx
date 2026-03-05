@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { UserProgress, AppScreen, MasteryLevel, Word } from './types';
+import { UserProgress, AppScreen, MasteryLevel, Word, WordStat } from './types';
 import { GET_MASTER_CORE } from './database';
 import { XP_PER_WORD_UPGRADE } from './constants';
 import { STABLE_KEY, saveVault, BootResult, runPersistenceQA, INITIAL_PROGRESS, deepHydrate } from './persistence';
@@ -20,7 +20,8 @@ import {
   getDocs, 
   writeBatch,
   increment,
-  updateDoc
+  updateDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import Dashboard from './components/Dashboard';
 import Flashcards from './components/Flashcards';
@@ -63,7 +64,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-// Titan Protocol V41-SPACE-OPTIMIZATION
+// Titan Protocol V42-WORD-INTELLIGENCE
 const App: React.FC<AppProps> = ({ bootData }) => {
   const [screen, setScreen] = useState<AppScreen | 'SUMMARY'>(AppScreen.DASHBOARD);
   const [sessionWords, setSessionWords] = useState<Word[]>([]);
@@ -148,12 +149,21 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       cloudProgress = deepHydrate(INITIAL_PROGRESS, data.progress || data);
     }
 
-    // Fetch word mastery subcollection
+    // Fetch word mastery subcollection (Legacy)
     const progressCollRef = collection(db, 'users', uid, 'progress');
     const progressSnap = await getDocs(progressCollRef);
     
     progressSnap.forEach((doc) => {
       cloudProgress.wordMastery[doc.id] = doc.data().level as MasteryLevel;
+    });
+
+    // Fetch granular word stats (New)
+    const statsCollRef = collection(db, 'users', uid, 'wordStats');
+    const statsSnap = await getDocs(statsCollRef);
+    statsSnap.forEach((doc) => {
+      cloudProgress.wordStats[doc.id] = doc.data() as WordStat;
+      // Also update wordMastery for backward compatibility
+      cloudProgress.wordMastery[doc.id] = doc.data().masteryLevel as MasteryLevel;
     });
 
     // Merge logic: If cloud is newer, update local
@@ -202,11 +212,14 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       const { wordMastery, ...generalStats } = p;
       batch.set(userDocRef, generalStats, { merge: true });
 
-      // 2. Update word mastery (only changed ones if we were more granular, but for now we'll push all or just the current state)
-      // To follow requirement users/{uid}/progress/{wordId}
-      // We'll only push the ones that are in the current p.wordMastery
-      // Note: For large libraries, this might be expensive. In a real app we'd track dirty words.
-      Object.entries(wordMastery).forEach(([wordId, level]) => {
+      // 2. Update word stats (Granular)
+      Object.entries(p.wordStats).forEach(([wordId, stat]) => {
+        const statDocRef = doc(db, 'users', uid, 'wordStats', wordId);
+        batch.set(statDocRef, { ...stat, updatedAt: Date.now() }, { merge: true });
+      });
+
+      // 3. Legacy word mastery sync (for backward compatibility)
+      Object.entries(p.wordMastery).forEach(([wordId, level]) => {
         const wordDocRef = doc(db, 'users', uid, 'progress', wordId);
         batch.set(wordDocRef, { level, updatedAt: Date.now() });
       });
@@ -239,6 +252,56 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       syncProgress();
     }
   }, [progress, userEmail]);
+  const handleWordResult = useCallback(async (wordId: string, term: string, isCorrect: boolean, newLevel: MasteryLevel) => {
+    const prev = progressRef.current;
+    const currentStat = prev.wordStats[wordId] || {
+      wordId,
+      term,
+      attempts: 0,
+      correct: 0,
+      wrong: 0,
+      streak: 0,
+      lastResult: 'none',
+      lastSeenAt: 0,
+      masteryLevel: 0
+    };
+
+    const updatedStat: WordStat = {
+      ...currentStat,
+      attempts: currentStat.attempts + 1,
+      correct: currentStat.correct + (isCorrect ? 1 : 0),
+      wrong: currentStat.wrong + (isCorrect ? 0 : 1),
+      streak: isCorrect ? currentStat.streak + 1 : 0,
+      lastResult: isCorrect ? 'correct' : 'wrong',
+      lastSeenAt: Date.now(),
+      masteryLevel: newLevel
+    };
+
+    const next: UserProgress = {
+      ...prev,
+      wordMastery: { ...prev.wordMastery, [wordId]: newLevel },
+      wordStats: { ...prev.wordStats, [wordId]: updatedStat },
+      updatedAt: Date.now()
+    };
+
+    setProgress(next);
+    progressRef.current = next;
+    isDirtyRef.current = true;
+
+    // Background push to Firestore if logged in
+    if (user) {
+      try {
+        const statRef = doc(db, 'users', user.uid, 'wordStats', wordId);
+        await setDoc(statRef, {
+          ...updatedStat,
+          lastSeenAt: serverTimestamp()
+        }, { merge: true });
+      } catch (e) {
+        console.error("Failed to push granular word stat", e);
+      }
+    }
+  }, [user]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) return;
@@ -350,9 +413,12 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     }, false);
   }, [updateProgress]);
 
-  const handleWordUpdate = useCallback((id: string, newLevel: MasteryLevel) => {
+  const handleWordUpdate = useCallback((id: string, newLevel: MasteryLevel, term: string, isCorrect: boolean = true) => {
     const today = getLocalKey();
     
+    // 1. Record granular result
+    handleWordResult(id, term, isCorrect, newLevel);
+
     updateProgress(prev => {
       const oldLevel = prev.wordMastery[id] || 0;
       const reachedMastery = newLevel === 3 && oldLevel < 3;
@@ -627,6 +693,11 @@ const App: React.FC<AppProps> = ({ bootData }) => {
               setSessionResults({ mastered: 0, reviews: 10, xp: score * 10 });
               setScreen('SUMMARY');
             }} 
+            onWordResult={(id, term, isCorrect) => {
+              const currentLevel = progress.wordMastery[id] || 0;
+              // Quiz doesn't automatically upgrade level, but records the attempt
+              handleWordResult(id, term, isCorrect, currentLevel);
+            }}
             onBack={() => setScreen(AppScreen.DASHBOARD)} 
           />
         )}

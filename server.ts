@@ -31,7 +31,7 @@ async function startServer() {
     status: "ok", 
     port: PORT, 
     env: process.env.NODE_ENV,
-    titan_protocol: "V41-SPACE-OPTIMIZATION", 
+    titan_protocol: "V42-WORD-INTELLIGENCE", 
     build_time: "2026-03-04T12:00:00-08:00"
   }));
 
@@ -93,7 +93,7 @@ async function startServer() {
         res.setHeader('Surrogate-Control', 'no-store');
         
         // Force a version check via a custom header
-        res.setHeader('X-Titan-Protocol', 'V41');
+        res.setHeader('X-Titan-Protocol', 'V42');
 
         const indexPath = path.resolve(distPath, "index.html");
         let html = fs.readFileSync(indexPath, 'utf8');
@@ -101,7 +101,7 @@ async function startServer() {
         // Inject a cache-busting script directly into the HTML
         html = html.replace('</head>', `
           <script>
-            console.log("Titan Protocol V41 Initialized");
+            console.log("Titan Protocol V42 Initialized");
             // Force clear old session if it's stuck
             if (localStorage.getItem('vv:vault_v20') && !localStorage.getItem('vv:user_email')) {
               console.log("Stale session detected, enforcing login gate");
