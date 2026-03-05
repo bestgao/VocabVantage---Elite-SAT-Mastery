@@ -20,7 +20,7 @@ const StudySessionSetup: React.FC<StudySessionSetupProps> = ({ words, progress, 
 
   const toggle = (list: any[], set: Function, val: any) => {
     if (list.includes(val)) {
-      if (list.length > 1) set(list.filter(v => v !== val));
+      set(list.filter(v => v !== val));
     } else {
       set([...list, val]);
     }
@@ -30,17 +30,17 @@ const StudySessionSetup: React.FC<StudySessionSetupProps> = ({ words, progress, 
     const config: SessionConfig = { levels, freqs, masteries, domains, highYieldOnly };
     const selection = words.filter(w => {
       const m = progress[w.id] || 0;
-      const matchesLevel = levels.includes(w.satLevel);
-      const matchesFreq = freqs.includes(w.frequencyTier);
-      const matchesMastery = masteries.includes(m);
-      const matchesDomain = domains.includes(w.academicDomain || 'General');
+      const matchesLevel = levels.length === 0 || levels.includes(w.satLevel);
+      const matchesFreq = freqs.length === 0 || freqs.includes(w.frequencyTier);
+      const matchesMastery = masteries.length === 0 || masteries.includes(m);
+      const matchesDomain = domains.length === 0 || domains.includes(w.academicDomain || 'General');
       const matchesHighYield = !highYieldOnly || (w.usageFrequencyScore !== undefined && w.usageFrequencyScore > 7);
       
       return matchesLevel && matchesFreq && matchesMastery && matchesDomain && matchesHighYield;
     });
 
     if (selection.length === 0) {
-      alert("Search Query Null: No assets found matching these categories.");
+      alert("No words match your current filters. Try broadening your selection (e.g., unchecking all focus areas to include everything).");
       return;
     }
 
