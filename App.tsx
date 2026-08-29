@@ -5,13 +5,19 @@ import { GET_MASTER_CORE } from './database';
 import { XP_PER_WORD_UPGRADE } from './constants';
 import { STABLE_KEY, saveVault, BootResult, runPersistenceQA, INITIAL_PROGRESS, deepHydrate } from './persistence';
 import { auth, db } from './firebase';
+import { buildSmartReview, nextSRS, reviewQualityFromResult } from './services/adaptive';
+
+
 import { 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   User as FirebaseUser
 } from 'firebase/auth';
+
+
 import { 
   doc, 
   setDoc, 
@@ -30,7 +36,18 @@ import StudySessionSetup from './components/StudySessionSetup';
 import SessionSummary from './components/SessionSummary';
 import GameHub from './components/GameHub';
 import Quiz from './components/Quiz';
-import { LogIn, User, CloudSync, AlertTriangle, CheckCircle2, Loader2, LogOut } from 'lucide-react';
+import {
+  LogIn,
+  User,
+  CloudSync,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  LogOut,
+  Eye,
+  EyeOff
+} from 'lucide-react';
+
 import { motion, AnimatePresence } from 'motion/react';
 
 interface AppProps {
@@ -77,7 +94,9 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+
   const [isInitialSyncDone, setIsInitialSyncDone] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   
@@ -260,7 +279,12 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       syncProgress();
     }
   }, [progress, userEmail]);
-  const handleWordResult = useCallback(async (wordId: string, term: string, isCorrect: boolean, newLevel: MasteryLevel) => {
+  const handleWordResult = useCallback(async (
+    wordId: string,
+    term: string,
+    isCorrect: boolean,
+    newLevel: MasteryLevel
+  ) => {
     const prev = progressRef.current;
     const currentStat = prev.wordStats[wordId] || {
       wordId,
@@ -285,10 +309,19 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       masteryLevel: newLevel
     };
 
+    const confidence =
+      !isCorrect ? 'low' :
+      updatedStat.streak >= 3 ? 'high' :
+      'medium';
+
+    const quality = reviewQualityFromResult(isCorrect, confidence);
+    const updatedSRS = nextSRS(prev.wordSRS[wordId], quality);
+
     const next: UserProgress = {
       ...prev,
       wordMastery: { ...prev.wordMastery, [wordId]: newLevel },
       wordStats: { ...prev.wordStats, [wordId]: updatedStat },
+      wordSRS: { ...prev.wordSRS, [wordId]: updatedSRS },
       updatedAt: Date.now()
     };
 
@@ -296,19 +329,43 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     progressRef.current = next;
     isDirtyRef.current = true;
 
-    // Background push to Firestore if logged in
     if (user) {
       try {
         const statRef = doc(db, 'users', user.uid, 'wordStats', wordId);
         await setDoc(statRef, {
           ...updatedStat,
-          lastSeenAt: serverTimestamp()
+          lastSeenAt: serverTimestamp(),
+          srs: updatedSRS
         }, { merge: true });
       } catch (e) {
         console.error("Failed to push granular word stat", e);
       }
     }
   }, [user]);
+
+  const handleForgotPassword = async () => {
+    if (!loginEmail.trim()) {
+      setLoginError('Enter your email address first, then click Forgot Password.');
+      return;
+    }
+
+    try {
+      setLoginError(null);
+      await sendPasswordResetEmail(auth, loginEmail.trim());
+
+      alert(
+        `Password reset email sent to ${loginEmail.trim()}.\n\nCheck your inbox and spam folder.`
+      );
+    } catch (e: any) {
+      console.error('Password reset error:', e);
+
+      if (e.code === 'auth/invalid-email') {
+        setLoginError('Please enter a valid email address.');
+      } else {
+        setLoginError(e.message || 'Unable to send password reset email.');
+      }
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -370,12 +427,18 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       }
     };
 
-    window.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && flush());
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flush();
+      }
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('pagehide', flush);
     window.addEventListener('beforeunload', flush);
-    
+
     return () => {
-      window.removeEventListener('visibilitychange', flush);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pagehide', flush);
       window.removeEventListener('beforeunload', flush);
     };
@@ -517,18 +580,47 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-3">Password</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-3">
+                    Password
+                  </label>
+
                   <div className="relative">
-                    <LogIn className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-300" size={24} />
-                    <input 
-                      type="password" 
+                    <LogIn
+                      className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-300"
+                      size={24}
+                    />
+
+                    <input
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
-                      className="w-full pl-20 pr-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-black text-xl text-slate-900"
+                      className="w-full pl-20 pr-20 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-black text-xl text-slate-900"
                     />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      className="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                    </button>
                   </div>
+
+                  {!isSignUp && (
+                    <div className="text-right px-3">
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-4">
@@ -649,7 +741,8 @@ const App: React.FC<AppProps> = ({ bootData }) => {
             onNavigate={setScreen} 
             onUpdateGoal={(type, val) => updateProgress(prev => ({ ...prev, [type]: val }), true)}
             onQuickStart={(customWords) => {
-              setSessionWords(customWords || fullLibrary.sort(() => 0.5 - Math.random()).slice(0, 20));
+              const smartWords = customWords || buildSmartReview(fullLibrary, progressRef.current, 20);
+              setSessionWords(smartWords);
               setScreen(AppScreen.LEARN);
             }} 
             onReset={() => {
