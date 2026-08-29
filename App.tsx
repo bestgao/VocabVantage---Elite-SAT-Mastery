@@ -93,10 +93,9 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
-
-const [loginPassword, setLoginPassword] = useState('');
-const [showPassword, setShowPassword] = useState(false);
-const [isSignUp, setIsSignUp] = useState(false);
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const [isInitialSyncDone, setIsInitialSyncDone] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -345,32 +344,30 @@ const [isSignUp, setIsSignUp] = useState(false);
   }, [user]);
 
   const handleForgotPassword = async () => {
-  if (!loginEmail.trim()) {
-    setLoginError('Enter your email address first, then click Forgot Password.');
-    return;
-  }
-
-  try {
-    setLoginError(null);
-    await sendPasswordResetEmail(auth, loginEmail.trim());
-
-    alert(
-      `Password reset email sent to ${loginEmail.trim()}.\n\nCheck your inbox and spam folder.`
-    );
-  } catch (e: any) {
-    console.error('Password reset error:', e);
-
-    if (e.code === 'auth/user-not-found') {
-      setLoginError('No account was found with that email address.');
-    } else if (e.code === 'auth/invalid-email') {
-      setLoginError('Please enter a valid email address.');
-    } else {
-      setLoginError(e.message || 'Unable to send password reset email.');
+    if (!loginEmail.trim()) {
+      setLoginError('Enter your email address first, then click Forgot Password.');
+      return;
     }
-  }
-};
 
- const handleLogin = async (e: React.FormEvent) => {
+    try {
+      setLoginError(null);
+      await sendPasswordResetEmail(auth, loginEmail.trim());
+
+      alert(
+        `Password reset email sent to ${loginEmail.trim()}.\n\nCheck your inbox and spam folder.`
+      );
+    } catch (e: any) {
+      console.error('Password reset error:', e);
+
+      if (e.code === 'auth/invalid-email') {
+        setLoginError('Please enter a valid email address.');
+      } else {
+        setLoginError(e.message || 'Unable to send password reset email.');
+      }
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) return;
     
@@ -583,39 +580,47 @@ const [isSignUp, setIsSignUp] = useState(false);
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-3">Password</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-3">
+                    Password
+                  </label>
+
                   <div className="relative">
-                    <LogIn className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-300" size={24} />
-<input 
-  type={showPassword ? 'text' : 'password'}
-  placeholder="••••••••"
-  value={loginPassword}
-  onChange={(e) => setLoginPassword(e.target.value)}
-  required
-  className="w-full pl-20 pr-20 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-black text-xl text-slate-900"
-/>
+                    <LogIn
+                      className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-300"
+                      size={24}
+                    />
 
-{!isSignUp && (
-  <div className="text-right px-3">
-    <button
-      type="button"
-      onClick={handleForgotPassword}
-      className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
-    >
-      Forgot Password?
-    </button>
-  </div>
-)}
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      className="w-full pl-20 pr-20 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-black text-xl text-slate-900"
+                    />
 
-<button
-  type="button"
-  onClick={() => setShowPassword(!showPassword)}
-  className="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
-  title={showPassword ? 'Hide password' : 'Show password'}
->
-  {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-</button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      className="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                    </button>
                   </div>
+
+                  {!isSignUp && (
+                    <div className="text-right px-3">
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-4">
