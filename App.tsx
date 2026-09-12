@@ -23,11 +23,7 @@ import {
   setDoc, 
   getDoc, 
   collection, 
-  getDocs, 
-  writeBatch,
-  increment,
-  updateDoc,
-  serverTimestamp
+  getDocs
 } from 'firebase/firestore';
 import Dashboard from './components/Dashboard';
 import Flashcards from './components/Flashcards';
@@ -57,6 +53,17 @@ interface AppProps {
 const getLocalKey = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const toCloudProgressSummary = (p: UserProgress) => {
+  const {
+    wordMastery: _wordMastery,
+    wordSRS: _wordSRS,
+    wordStats: _wordStats,
+    ...summary
+  } = p;
+
+  return summary;
 };
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
@@ -185,7 +192,21 @@ const App: React.FC<AppProps> = ({ bootData }) => {
 
     statsSnap.forEach((statsDoc) => {
       const data = statsDoc.data();
-      const { srs, updatedAt, ...statData } = data;
+      const { srs, updatedAt, ...rawStatData } = data;
+
+      // Older documents may contain a Firestore Timestamp here.
+      const normalizedLastSeenAt =
+        typeof rawStatData.lastSeenAt === 'number'
+          ? rawStatData.lastSeenAt
+          : rawStatData.lastSeenAt &&
+              typeof rawStatData.lastSeenAt.toMillis === 'function'
+            ? rawStatData.lastSeenAt.toMillis()
+            : 0;
+
+      const statData = {
+        ...rawStatData,
+        lastSeenAt: normalizedLastSeenAt
+      };
 
       cloudProgress.wordStats[statsDoc.id] = statData as WordStat;
 
@@ -247,38 +268,21 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     setSyncStatus('syncing');
 
     try {
-      const batch = writeBatch(db);
-
-      // Canonical cloud snapshot: store the complete UserProgress in one place.
       const userDocRef = doc(db, 'users', uid);
-      batch.set(userDocRef, {
+      const progressSummary = toCloudProgressSummary(p);
+
+      // Keep the main user document small. Per-word mastery, stats, and SRS
+      // are stored only in their granular subcollections.
+      // mergeFields intentionally replaces the whole `progress` map while
+      // preserving unrelated account fields such as createdAt.
+      await setDoc(userDocRef, {
         email: auth.currentUser?.email || userEmail || null,
-        progress: p,
+        progress: progressSummary,
         lastActive: new Date().toISOString()
-      }, { merge: true });
-
-      // Granular word stats remain useful for analytics and targeted updates.
-      Object.entries(p.wordStats).forEach(([wordId, stat]) => {
-        const statDocRef = doc(db, 'users', uid, 'wordStats', wordId);
-        const srs = p.wordSRS[wordId];
-
-        batch.set(statDocRef, {
-          ...stat,
-          ...(srs ? { srs } : {}),
-          updatedAt: Date.now()
-        }, { merge: true });
+      }, {
+        mergeFields: ['email', 'progress', 'lastActive']
       });
 
-      // Legacy mastery collection is retained for backward compatibility.
-      Object.entries(p.wordMastery).forEach(([wordId, level]) => {
-        const wordDocRef = doc(db, 'users', uid, 'progress', wordId);
-        batch.set(wordDocRef, {
-          level,
-          updatedAt: Date.now()
-        }, { merge: true });
-      });
-
-      await batch.commit();
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 3000);
     } catch (e: any) {
@@ -344,13 +348,29 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     if (user) {
       try {
         const statRef = doc(db, 'users', user.uid, 'wordStats', wordId);
-        await setDoc(statRef, {
-          ...updatedStat,
-          lastSeenAt: serverTimestamp(),
-          srs: updatedSRS
-        }, { merge: true });
+        const legacyMasteryRef = doc(
+          db,
+          'users',
+          user.uid,
+          'progress',
+          wordId
+        );
+
+        // Only the word that changed is written. This keeps sync cost constant
+        // even after a student has studied hundreds or thousands of words.
+        await Promise.all([
+          setDoc(statRef, {
+            ...updatedStat,
+            srs: updatedSRS,
+            updatedAt: Date.now()
+          }, { merge: true }),
+          setDoc(legacyMasteryRef, {
+            level: newLevel,
+            updatedAt: Date.now()
+          }, { merge: true })
+        ]);
       } catch (e) {
-        console.error("Failed to push granular word stat", e);
+        console.error('Failed to push changed word data', e);
       }
     }
   }, [user]);
@@ -401,7 +421,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
         const userDocRef = doc(db, 'users', newUser.uid);
         await setDoc(userDocRef, {
           email: loginEmail,
-          progress: INITIAL_PROGRESS,
+          progress: toCloudProgressSummary(INITIAL_PROGRESS),
           lastActive: new Date().toISOString(),
           createdAt: new Date().toISOString()
         });
