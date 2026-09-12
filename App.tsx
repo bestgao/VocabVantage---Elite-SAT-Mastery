@@ -23,7 +23,8 @@ import {
   setDoc, 
   getDoc, 
   collection, 
-  getDocs
+  getDocs,
+  writeBatch
 } from 'firebase/firestore';
 import Dashboard from './components/Dashboard';
 import Flashcards from './components/Flashcards';
@@ -234,7 +235,10 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       progressRef.current = cloudProgress;
       commit(cloudProgress, true);
     } else if (progressRef.current.revision > (cloudProgress.revision || 0)) {
+      // Local may contain study completed while signed out/offline.
+      // Push the lightweight summary plus granular word state in bounded batches.
       await syncToCloud(uid, progressRef.current);
+      await syncGranularProgress(uid, progressRef.current);
     }
   };
 
@@ -263,6 +267,29 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       }
     }
   }, [user]);
+
+  const syncGranularProgress = async (uid: string, p: UserProgress) => {
+    const entries = Object.entries(p.wordStats);
+    const CHUNK_SIZE = 400;
+
+    for (let start = 0; start < entries.length; start += CHUNK_SIZE) {
+      const batch = writeBatch(db);
+      const chunk = entries.slice(start, start + CHUNK_SIZE);
+
+      chunk.forEach(([wordId, stat]) => {
+        const statRef = doc(db, 'users', uid, 'wordStats', wordId);
+        const srs = p.wordSRS[wordId];
+
+        batch.set(statRef, {
+          ...stat,
+          ...(srs ? { srs } : {}),
+          updatedAt: Date.now()
+        }, { merge: true });
+      });
+
+      await batch.commit();
+    }
+  };
 
   const syncToCloud = async (uid: string, p: UserProgress) => {
     setSyncStatus('syncing');
@@ -348,27 +375,14 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     if (user) {
       try {
         const statRef = doc(db, 'users', user.uid, 'wordStats', wordId);
-        const legacyMasteryRef = doc(
-          db,
-          'users',
-          user.uid,
-          'progress',
-          wordId
-        );
 
-        // Only the word that changed is written. This keeps sync cost constant
-        // even after a student has studied hundreds or thousands of words.
-        await Promise.all([
-          setDoc(statRef, {
-            ...updatedStat,
-            srs: updatedSRS,
-            updatedAt: Date.now()
-          }, { merge: true }),
-          setDoc(legacyMasteryRef, {
-            level: newLevel,
-            updatedAt: Date.now()
-          }, { merge: true })
-        ]);
+        // Only the word that changed is written. Mastery is already part of
+        // WordStat, so new writes do not duplicate data in the legacy collection.
+        await setDoc(statRef, {
+          ...updatedStat,
+          srs: updatedSRS,
+          updatedAt: Date.now()
+        }, { merge: true });
       } catch (e) {
         console.error('Failed to push changed word data', e);
       }
