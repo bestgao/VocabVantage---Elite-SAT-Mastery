@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /users/{userId} {
+      allow read, write: if signedIn()
+                         && request.auth.uid == userId;
+
+      match /{document=**} {
+        allow read, write: if signedIn()
+                           && request.auth.uid == userId;
+      }
+    }
+
+    match /words/{wordId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /competitions/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+
+      allow create: if signedIn()
+                    && request.resource.data.ownerId == request.auth.uid
+                    && request.resource.data.status == 'active';
+
+      allow update, delete: if signedIn()
+                            && resource.data.ownerId == request.auth.uid;
+
+      match /members/{userId} {
+        allow read: if signedIn();
+
+        allow create: if signedIn()
+                      && request.auth.uid == userId
+                      && exists(
+                        /databases/$(database)/documents/competitions/$(code)
+                      )
+                      && request.resource.data.totalScore == 0
+                      && request.resource.data.rounds == 0
+                      && request.resource.data.bestRound == 0;
+
+        allow update: if signedIn()
+                      && request.auth.uid == userId;
+
+        allow delete: if signedIn()
+                      && request.auth.uid == userId;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
