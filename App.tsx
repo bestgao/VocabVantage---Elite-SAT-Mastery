@@ -23,11 +23,8 @@ import {
   setDoc, 
   getDoc, 
   collection, 
-  getDocs, 
-  writeBatch,
-  increment,
-  updateDoc,
-  serverTimestamp
+  getDocs,
+  writeBatch
 } from 'firebase/firestore';
 import Dashboard from './components/Dashboard';
 import Flashcards from './components/Flashcards';
@@ -57,6 +54,17 @@ interface AppProps {
 const getLocalKey = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const toCloudProgressSummary = (p: UserProgress) => {
+  const {
+    wordMastery: _wordMastery,
+    wordSRS: _wordSRS,
+    wordStats: _wordStats,
+    ...summary
+  } = p;
+
+  return summary;
 };
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
@@ -158,40 +166,79 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   const fetchFromCloud = async (uid: string) => {
     const userDocRef = doc(db, 'users', uid);
     const userDoc = await getDoc(userDocRef);
-    
-    let cloudProgress = { ...INITIAL_PROGRESS };
-    
+
+    let cloudProgress = deepHydrate(INITIAL_PROGRESS, {});
+
     if (userDoc.exists()) {
       const data = userDoc.data();
-      // Use Neural Shield Deep Hydration to merge cloud data safely
-      // This ensures no data is lost during app version upgrades
+      // Canonical cloud format: the complete UserProgress object lives in `progress`.
+      // Backward compatibility: older accounts may still have progress fields at the root.
       cloudProgress = deepHydrate(INITIAL_PROGRESS, data.progress || data);
     }
 
-    // Fetch word mastery subcollection (Legacy)
+    // Fetch legacy mastery subcollection for backward compatibility.
     const progressCollRef = collection(db, 'users', uid, 'progress');
     const progressSnap = await getDocs(progressCollRef);
-    
-    progressSnap.forEach((doc) => {
-      cloudProgress.wordMastery[doc.id] = doc.data().level as MasteryLevel;
+
+    progressSnap.forEach((progressDoc) => {
+      const level = progressDoc.data().level as MasteryLevel | undefined;
+      if (typeof level === 'number') {
+        cloudProgress.wordMastery[progressDoc.id] = level;
+      }
     });
 
-    // Fetch granular word stats (New)
+    // Fetch granular word stats and restore SRS scheduling data.
     const statsCollRef = collection(db, 'users', uid, 'wordStats');
     const statsSnap = await getDocs(statsCollRef);
-    statsSnap.forEach((doc) => {
-      cloudProgress.wordStats[doc.id] = doc.data() as WordStat;
-      // Also update wordMastery for backward compatibility
-      cloudProgress.wordMastery[doc.id] = doc.data().masteryLevel as MasteryLevel;
+
+    statsSnap.forEach((statsDoc) => {
+      const data = statsDoc.data();
+      const { srs, updatedAt, ...rawStatData } = data;
+
+      // Older documents may contain a Firestore Timestamp here.
+      const normalizedLastSeenAt =
+        typeof rawStatData.lastSeenAt === 'number'
+          ? rawStatData.lastSeenAt
+          : rawStatData.lastSeenAt &&
+              typeof rawStatData.lastSeenAt.toMillis === 'function'
+            ? rawStatData.lastSeenAt.toMillis()
+            : 0;
+
+      const statData = {
+        ...rawStatData,
+        lastSeenAt: normalizedLastSeenAt
+      };
+
+      cloudProgress.wordStats[statsDoc.id] = statData as WordStat;
+
+      if (typeof data.masteryLevel === 'number') {
+        cloudProgress.wordMastery[statsDoc.id] = data.masteryLevel as MasteryLevel;
+      }
+
+      if (
+        srs &&
+        typeof srs.lastReviewed === 'string' &&
+        typeof srs.nextReviewAt === 'string' &&
+        typeof srs.intervalDays === 'number'
+      ) {
+        cloudProgress.wordSRS[statsDoc.id] = {
+          lastReviewed: srs.lastReviewed,
+          nextReviewAt: srs.nextReviewAt,
+          intervalDays: srs.intervalDays
+        };
+      }
     });
 
-    // Merge logic: If cloud is newer, update local
+    // Merge by revision so the newest valid state wins.
     if (cloudProgress.revision > progressRef.current.revision) {
       setProgress(cloudProgress);
+      progressRef.current = cloudProgress;
       commit(cloudProgress, true);
     } else if (progressRef.current.revision > (cloudProgress.revision || 0)) {
-      // Local is newer, push to cloud
+      // Local may contain study completed while signed out/offline.
+      // Push the lightweight summary plus granular word state in bounded batches.
       await syncToCloud(uid, progressRef.current);
+      await syncGranularProgress(uid, progressRef.current);
     }
   };
 
@@ -221,64 +268,60 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     }
   }, [user]);
 
-  const syncToCloud = async (uid: string, p: UserProgress) => {
-    setSyncStatus('syncing');
-    try {
+  const syncGranularProgress = async (uid: string, p: UserProgress) => {
+    const entries = Object.entries(p.wordStats);
+    const CHUNK_SIZE = 400;
+
+    for (let start = 0; start < entries.length; start += CHUNK_SIZE) {
       const batch = writeBatch(db);
-      
-      // 1. Update general stats
-      const userDocRef = doc(db, 'users', uid);
-      const { wordMastery, ...generalStats } = p;
-      batch.set(userDocRef, generalStats, { merge: true });
+      const chunk = entries.slice(start, start + CHUNK_SIZE);
 
-      // 2. Update word stats (Granular)
-      Object.entries(p.wordStats).forEach(([wordId, stat]) => {
-        const statDocRef = doc(db, 'users', uid, 'wordStats', wordId);
-        batch.set(statDocRef, { ...stat, updatedAt: Date.now() }, { merge: true });
-      });
+      chunk.forEach(([wordId, stat]) => {
+        const statRef = doc(db, 'users', uid, 'wordStats', wordId);
+        const srs = p.wordSRS[wordId];
 
-      // 3. Legacy word mastery sync (for backward compatibility)
-      Object.entries(p.wordMastery).forEach(([wordId, level]) => {
-        const wordDocRef = doc(db, 'users', uid, 'progress', wordId);
-        batch.set(wordDocRef, { level, updatedAt: Date.now() });
+        batch.set(statRef, {
+          ...stat,
+          ...(srs ? { srs } : {}),
+          updatedAt: Date.now()
+        }, { merge: true });
       });
 
       await batch.commit();
+    }
+  };
+
+  const syncToCloud = async (uid: string, p: UserProgress) => {
+    setSyncStatus('syncing');
+
+    try {
+      const userDocRef = doc(db, 'users', uid);
+      const progressSummary = toCloudProgressSummary(p);
+
+      // Keep the main user document small. Per-word mastery, stats, and SRS
+      // are stored only in their granular subcollections.
+      // mergeFields intentionally replaces the whole `progress` map while
+      // preserving unrelated account fields such as createdAt.
+      await setDoc(userDocRef, {
+        email: auth.currentUser?.email || userEmail || null,
+        progress: progressSummary,
+        lastActive: new Date().toISOString()
+      }, {
+        mergeFields: ['email', 'progress', 'lastActive']
+      });
+
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 3000);
     } catch (e: any) {
       if (e.code === 'permission-denied') {
-        console.warn("Cloud sync restricted: Local data will be used for this session.");
+        console.warn('Cloud sync restricted: local data will be used for this session.');
       } else {
-        console.error("Cloud sync failed", e);
+        console.error('Cloud sync failed', e);
       }
       setSyncStatus('error');
     }
   };
 
-  // Firestore Sync Logic
-  useEffect(() => {
-    if (userEmail && userEmail !== 'guest_user' && auth.currentUser) {
-      const syncProgress = async () => {
-        try {
-          const userDoc = doc(db, "users", auth.currentUser!.uid);
-          await setDoc(userDoc, {
-            email: userEmail,
-            progress: progress,
-            lastActive: new Date().toISOString()
-          }, { merge: true });
-          console.log("Cloud Sync Successful");
-        } catch (e: any) {
-          if (e.code === 'permission-denied') {
-            // Silently fail as the main syncToCloud handles the warning
-          } else {
-            console.error("Cloud Sync Failed:", e);
-          }
-        }
-      };
-      syncProgress();
-    }
-  }, [progress, userEmail]);
   const handleWordResult = useCallback(async (
     wordId: string,
     term: string,
@@ -332,13 +375,16 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     if (user) {
       try {
         const statRef = doc(db, 'users', user.uid, 'wordStats', wordId);
+
+        // Only the word that changed is written. Mastery is already part of
+        // WordStat, so new writes do not duplicate data in the legacy collection.
         await setDoc(statRef, {
           ...updatedStat,
-          lastSeenAt: serverTimestamp(),
-          srs: updatedSRS
+          srs: updatedSRS,
+          updatedAt: Date.now()
         }, { merge: true });
       } catch (e) {
-        console.error("Failed to push granular word stat", e);
+        console.error('Failed to push changed word data', e);
       }
     }
   }, [user]);
@@ -389,7 +435,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
         const userDocRef = doc(db, 'users', newUser.uid);
         await setDoc(userDocRef, {
           email: loginEmail,
-          progress: INITIAL_PROGRESS,
+          progress: toCloudProgressSummary(INITIAL_PROGRESS),
           lastActive: new Date().toISOString(),
           createdAt: new Date().toISOString()
         });
