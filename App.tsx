@@ -158,39 +158,61 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   const fetchFromCloud = async (uid: string) => {
     const userDocRef = doc(db, 'users', uid);
     const userDoc = await getDoc(userDocRef);
-    
-    let cloudProgress = { ...INITIAL_PROGRESS };
-    
+
+    let cloudProgress = deepHydrate(INITIAL_PROGRESS, {});
+
     if (userDoc.exists()) {
       const data = userDoc.data();
-      // Use Neural Shield Deep Hydration to merge cloud data safely
-      // This ensures no data is lost during app version upgrades
+      // Canonical cloud format: the complete UserProgress object lives in `progress`.
+      // Backward compatibility: older accounts may still have progress fields at the root.
       cloudProgress = deepHydrate(INITIAL_PROGRESS, data.progress || data);
     }
 
-    // Fetch word mastery subcollection (Legacy)
+    // Fetch legacy mastery subcollection for backward compatibility.
     const progressCollRef = collection(db, 'users', uid, 'progress');
     const progressSnap = await getDocs(progressCollRef);
-    
-    progressSnap.forEach((doc) => {
-      cloudProgress.wordMastery[doc.id] = doc.data().level as MasteryLevel;
+
+    progressSnap.forEach((progressDoc) => {
+      const level = progressDoc.data().level as MasteryLevel | undefined;
+      if (typeof level === 'number') {
+        cloudProgress.wordMastery[progressDoc.id] = level;
+      }
     });
 
-    // Fetch granular word stats (New)
+    // Fetch granular word stats and restore SRS scheduling data.
     const statsCollRef = collection(db, 'users', uid, 'wordStats');
     const statsSnap = await getDocs(statsCollRef);
-    statsSnap.forEach((doc) => {
-      cloudProgress.wordStats[doc.id] = doc.data() as WordStat;
-      // Also update wordMastery for backward compatibility
-      cloudProgress.wordMastery[doc.id] = doc.data().masteryLevel as MasteryLevel;
+
+    statsSnap.forEach((statsDoc) => {
+      const data = statsDoc.data();
+      const { srs, updatedAt, ...statData } = data;
+
+      cloudProgress.wordStats[statsDoc.id] = statData as WordStat;
+
+      if (typeof data.masteryLevel === 'number') {
+        cloudProgress.wordMastery[statsDoc.id] = data.masteryLevel as MasteryLevel;
+      }
+
+      if (
+        srs &&
+        typeof srs.lastReviewed === 'string' &&
+        typeof srs.nextReviewAt === 'string' &&
+        typeof srs.intervalDays === 'number'
+      ) {
+        cloudProgress.wordSRS[statsDoc.id] = {
+          lastReviewed: srs.lastReviewed,
+          nextReviewAt: srs.nextReviewAt,
+          intervalDays: srs.intervalDays
+        };
+      }
     });
 
-    // Merge logic: If cloud is newer, update local
+    // Merge by revision so the newest valid state wins.
     if (cloudProgress.revision > progressRef.current.revision) {
       setProgress(cloudProgress);
+      progressRef.current = cloudProgress;
       commit(cloudProgress, true);
     } else if (progressRef.current.revision > (cloudProgress.revision || 0)) {
-      // Local is newer, push to cloud
       await syncToCloud(uid, progressRef.current);
     }
   };
@@ -223,24 +245,37 @@ const App: React.FC<AppProps> = ({ bootData }) => {
 
   const syncToCloud = async (uid: string, p: UserProgress) => {
     setSyncStatus('syncing');
+
     try {
       const batch = writeBatch(db);
-      
-      // 1. Update general stats
-      const userDocRef = doc(db, 'users', uid);
-      const { wordMastery, ...generalStats } = p;
-      batch.set(userDocRef, generalStats, { merge: true });
 
-      // 2. Update word stats (Granular)
+      // Canonical cloud snapshot: store the complete UserProgress in one place.
+      const userDocRef = doc(db, 'users', uid);
+      batch.set(userDocRef, {
+        email: auth.currentUser?.email || userEmail || null,
+        progress: p,
+        lastActive: new Date().toISOString()
+      }, { merge: true });
+
+      // Granular word stats remain useful for analytics and targeted updates.
       Object.entries(p.wordStats).forEach(([wordId, stat]) => {
         const statDocRef = doc(db, 'users', uid, 'wordStats', wordId);
-        batch.set(statDocRef, { ...stat, updatedAt: Date.now() }, { merge: true });
+        const srs = p.wordSRS[wordId];
+
+        batch.set(statDocRef, {
+          ...stat,
+          ...(srs ? { srs } : {}),
+          updatedAt: Date.now()
+        }, { merge: true });
       });
 
-      // 3. Legacy word mastery sync (for backward compatibility)
+      // Legacy mastery collection is retained for backward compatibility.
       Object.entries(p.wordMastery).forEach(([wordId, level]) => {
         const wordDocRef = doc(db, 'users', uid, 'progress', wordId);
-        batch.set(wordDocRef, { level, updatedAt: Date.now() });
+        batch.set(wordDocRef, {
+          level,
+          updatedAt: Date.now()
+        }, { merge: true });
       });
 
       await batch.commit();
@@ -248,37 +283,14 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       setTimeout(() => setSyncStatus('idle'), 3000);
     } catch (e: any) {
       if (e.code === 'permission-denied') {
-        console.warn("Cloud sync restricted: Local data will be used for this session.");
+        console.warn('Cloud sync restricted: local data will be used for this session.');
       } else {
-        console.error("Cloud sync failed", e);
+        console.error('Cloud sync failed', e);
       }
       setSyncStatus('error');
     }
   };
 
-  // Firestore Sync Logic
-  useEffect(() => {
-    if (userEmail && userEmail !== 'guest_user' && auth.currentUser) {
-      const syncProgress = async () => {
-        try {
-          const userDoc = doc(db, "users", auth.currentUser!.uid);
-          await setDoc(userDoc, {
-            email: userEmail,
-            progress: progress,
-            lastActive: new Date().toISOString()
-          }, { merge: true });
-          console.log("Cloud Sync Successful");
-        } catch (e: any) {
-          if (e.code === 'permission-denied') {
-            // Silently fail as the main syncToCloud handles the warning
-          } else {
-            console.error("Cloud Sync Failed:", e);
-          }
-        }
-      };
-      syncProgress();
-    }
-  }, [progress, userEmail]);
   const handleWordResult = useCallback(async (
     wordId: string,
     term: string,
