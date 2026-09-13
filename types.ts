@@ -1,4 +1,4 @@
-
+﻿
 export type MasteryLevel = 0 | 1 | 2 | 3; 
 
 export interface SessionConfig {
@@ -60,6 +60,13 @@ export interface UserProgress {
   milestonesClaimed: string[];
   lastConfig: SessionConfig;
   customWords: Word[];
+  diagnosticScore?: number;
+  diagnosticEstimatedKnownWords?: number;
+  diagnosticCorrect?: number;
+  diagnosticTotal?: number;
+  diagnosticWeakestDomain?: string;
+  diagnosticCompletedAt?: number;
+  recommendedDailyWords?: number;
 }
 
 export interface Word {
@@ -103,3 +110,4 @@ export enum AppScreen {
   STORE = 'STORE',
   ACHIEVEMENTS = 'ACHIEVEMENTS'
 }
+
