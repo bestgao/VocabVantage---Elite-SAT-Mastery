@@ -132,7 +132,7 @@ const OddOneOut: React.FC<OddOneOutProps> = ({ words, onBack, onXP }) => {
     return (
       <div className="bg-white rounded-[4rem] p-10 md:p-14 space-y-12 shadow-2xl max-w-5xl mx-auto border border-slate-100 overflow-y-auto max-h-[90vh] no-scrollbar pb-24">
         <div className="text-center">
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Detective Performance Audit</h2>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Detective Results</h2>
           <div className="flex justify-center gap-12 items-center mt-6">
              <div className="text-center">
                 <p className="text-6xl font-black text-rose-500">{score}</p>

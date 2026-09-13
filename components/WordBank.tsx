@@ -126,10 +126,9 @@ const WordBank: React.FC<WordBankProps> = ({ words, progress, onImport, onDelete
     <div className="space-y-8 animate-in fade-in duration-700 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-5xl font-black text-slate-900 tracking-tighter">Titan Repository</h2>
-          {/* RESTORED COUNT DISPLAY */}
+          <h2 className="text-5xl font-black text-slate-900 tracking-tighter">Word Bank</h2>
           <p className="text-slate-500 font-medium text-sm tracking-tight mt-1">
-            Displaying <span className="text-indigo-600 font-black">{filteredWords.length.toLocaleString()}</span> units of <span className="text-slate-900 font-black">{words.length.toLocaleString()} total assets</span>.
+            Displaying <span className="text-indigo-600 font-black">{filteredWords.length.toLocaleString()}</span> words from <span className="text-slate-900 font-black">{words.length.toLocaleString()} total words</span>.
           </p>
         </div>
         <div className="flex gap-3">
@@ -150,8 +149,8 @@ const WordBank: React.FC<WordBankProps> = ({ words, progress, onImport, onDelete
           <div className="bg-white w-full max-w-3xl rounded-[4rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             <div className="p-12 bg-indigo-600 text-white flex justify-between items-center">
               <div>
-                <h3 className="text-4xl font-black tracking-tighter italic">Titan <span className="text-indigo-200">Intelligence Guide</span></h3>
-                <p className="text-xs font-bold uppercase tracking-widest opacity-80 mt-1">System Navigation & Data Management</p>
+                <h3 className="text-4xl font-black tracking-tighter italic">Word Bank <span className="text-indigo-200">Guide</span></h3>
+                <p className="text-xs font-bold uppercase tracking-widest opacity-80 mt-1">Library, backups, and imports</p>
               </div>
               <button onClick={() => setShowHelp(false)} className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all">
                 <X size={24} />
@@ -164,7 +163,7 @@ const WordBank: React.FC<WordBankProps> = ({ words, progress, onImport, onDelete
                   <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
                     <Database size={24} />
                   </div>
-                  <h4 className="text-xl font-black text-slate-900 uppercase tracking-tight">Data Architecture</h4>
+                  <h4 className="text-xl font-black text-slate-900 uppercase tracking-tight">How Words Are Saved</h4>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
@@ -172,7 +171,7 @@ const WordBank: React.FC<WordBankProps> = ({ words, progress, onImport, onDelete
                     <p className="text-sm text-slate-600 font-medium leading-relaxed">All 2,280 words are stored in the application's core volumes. They are permanent and cannot be deleted from the source.</p>
                   </div>
                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                    <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-2">User Vault</p>
+                    <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-2">Your Progress</p>
                     <p className="text-sm text-slate-600 font-medium leading-relaxed">Your mastery levels, XP, and custom words are stored in your browser's local storage (IndexedDB/LocalStorage).</p>
                   </div>
                 </div>
@@ -196,8 +195,8 @@ const WordBank: React.FC<WordBankProps> = ({ words, progress, onImport, onDelete
                   <div className="flex gap-6 p-6 hover:bg-slate-50 rounded-3xl transition-all group">
                     <div className="mt-1 text-slate-300 group-hover:text-indigo-500 transition-colors"><FileText size={20} /></div>
                     <div>
-                      <p className="font-black text-slate-900 text-sm uppercase tracking-tight">Export Local Vault (Dashboard)</p>
-                      <p className="text-xs text-slate-500 font-medium mt-1">On the main dashboard, use "Export Local Vault" to save your progress (XP, Mastery) as a JSON file.</p>
+                      <p className="font-black text-slate-900 text-sm uppercase tracking-tight">Export Progress (Dashboard)</p>
+                      <p className="text-xs text-slate-500 font-medium mt-1">On the main dashboard, use "Export Progress" to save your XP and mastery data as a JSON file.</p>
                     </div>
                   </div>
                   <div className="flex gap-6 p-6 hover:bg-slate-50 rounded-3xl transition-all group">
@@ -222,12 +221,12 @@ const WordBank: React.FC<WordBankProps> = ({ words, progress, onImport, onDelete
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4">
           <div className="bg-white w-full max-w-xl rounded-[3.5rem] p-12 shadow-2xl space-y-8 animate-in zoom-in-95">
             <div className="text-center space-y-3">
-              <h3 className="text-3xl font-black text-slate-900 tracking-tight">Intelligence Feed</h3>
-              <p className="text-sm text-slate-500 font-medium">Titan 2.2 Parser: Handling 2,280+ word dataset with deduplication active.</p>
+              <h3 className="text-3xl font-black text-slate-900 tracking-tight">Import Words</h3>
+              <p className="text-sm text-slate-500 font-medium">CSV import checks for duplicates before adding custom words.</p>
             </div>
             
             <div onClick={() => !isParsing && fileInputRef.current?.click()} className="group border-4 border-dashed border-slate-100 rounded-[2.5rem] p-16 text-center transition-all cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30">
-              {isParsing ? <div className="flex flex-col items-center gap-4"><div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div><p className="text-indigo-600 font-black text-xs uppercase tracking-widest">Processing Data...</p></div> : <><p className="text-slate-400 font-black text-xs uppercase tracking-widest group-hover:text-indigo-600">Select Dataset File</p><p className="text-[10px] text-slate-300 font-bold mt-2 uppercase">CSV Bulk Ingestion</p></>}
+              {isParsing ? <div className="flex flex-col items-center gap-4"><div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div><p className="text-indigo-600 font-black text-xs uppercase tracking-widest">Processing CSV...</p></div> : <><p className="text-slate-400 font-black text-xs uppercase tracking-widest group-hover:text-indigo-600">Select CSV File</p><p className="text-[10px] text-slate-300 font-bold mt-2 uppercase">Add custom words</p></>}
             </div>
 
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" className="hidden" />

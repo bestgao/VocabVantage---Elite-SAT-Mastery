@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { UserProgress, AppScreen, MasteryLevel, Word } from '../types';
 import { MASTERY_COLORS } from '../constants';
-import { HelpCircle, X, Info, ShieldCheck, Database, Download } from 'lucide-react';
+import { Award, Bot, Gift, HelpCircle, Trophy, X, Info, ShieldCheck, Database, Download } from 'lucide-react';
 import Tooltip from './Tooltip';
 
 interface DashboardProps {
@@ -13,7 +13,6 @@ interface DashboardProps {
   onNavigate: (screen: AppScreen) => void;
   onUpdateGoal: (type: string, val: number) => void;
   onQuickStart: (words?: Word[]) => void;
-  onReset: () => void;
   onExport: () => void;
   onRunQA: () => void;
 }
@@ -22,7 +21,7 @@ const getLocalKey = (date: Date = new Date()) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, bootLog, onNavigate, onUpdateGoal, onQuickStart, onReset, onExport, onRunQA }) => {
+const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, bootLog, onNavigate, onUpdateGoal, onQuickStart, onExport, onRunQA }) => {
   const [showForensics, setShowForensics] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showDomainAudit, setShowDomainAudit] = useState(false);
@@ -138,13 +137,13 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
             <div className="flex flex-wrap justify-center lg:justify-start gap-3">
                <div className="flex items-center gap-2 bg-indigo-500/20 text-indigo-400 px-5 py-2 rounded-full border border-indigo-500/20">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-[10px] font-black uppercase tracking-widest italic">Protocol V42 Active</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest italic">Version 3.0 Plan Active</span>
                </div>
                <button 
                  onClick={shareApp}
                  className="flex items-center gap-2 bg-slate-800 text-slate-300 px-5 py-2 rounded-full border border-slate-700 hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest shadow-lg"
                >
-                 <span>🔗</span> Share Live Link
+                 <span>🔗</span> Share App Link
                </button>
                <button 
                  onClick={() => setShowHelp(true)}
@@ -152,17 +151,6 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                >
                  <HelpCircle size={14} /> Help Guide
                </button>
-               {(!progress.lastConfig || progress.xp === 0) && (
-                 <button 
-                   onClick={() => {
-                     localStorage.removeItem('vv:user_email');
-                     window.location.reload();
-                   }}
-                   className="flex items-center gap-2 bg-rose-600 text-white px-5 py-2 rounded-full border border-rose-500 hover:bg-rose-700 transition-all text-[10px] font-black uppercase tracking-widest shadow-lg animate-pulse"
-                 >
-                   <span>🔑</span> Force Login / Reset
-                 </button>
-               )}
                {progress.streak > 1 && (
                  <div className="bg-rose-500/30 text-rose-400 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-500/20 animate-titan">
                    {progress.streak} Day Heat 🔥
@@ -171,15 +159,15 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
             </div>
             
             <div className="space-y-4">
-              <h1 className="text-6xl sm:text-7xl md:text-9xl font-black tracking-tighter leading-[0.8] italic">Neural <span className="text-indigo-500 not-italic">Audit</span></h1>
-              <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[10px] sm:text-xs">Unit Mastery & Historical Analytics</p>
+              <h1 className="text-6xl sm:text-7xl md:text-9xl font-black tracking-tighter leading-[0.8] italic">Learning <span className="text-indigo-500 not-italic">Dashboard</span></h1>
+              <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[10px] sm:text-xs">SAT mastery, weak words, goals, and review timing</p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 md:gap-8 pt-4">
                <Tooltip text="Percentage of the 2,250 SAT words you have fully mastered.">
                  <div className="space-y-1">
                    <p className="text-4xl md:text-5xl font-black">{stability}%</p>
-                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Global Stability</p>
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Library Mastery</p>
                  </div>
                </Tooltip>
                <Tooltip text="Total number of words that have reached Level 4 (Mastered).">
@@ -204,14 +192,34 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Tooltip text="Instantly start a session with 20 random words from your current review list." position="bottom">
-                <button onClick={() => onQuickStart()} className="w-full bg-white text-slate-950 py-6 md:py-8 rounded-[2rem] md:rounded-[2.5rem] font-black text-xl md:text-2xl hover:bg-indigo-500 hover:text-white transition-all active:scale-95 shadow-2xl px-12">Initialize Training ⚡</button>
+                <button onClick={() => onQuickStart()} className="w-full bg-white text-slate-950 py-6 md:py-8 rounded-[2rem] md:rounded-[2.5rem] font-black text-xl md:text-2xl hover:bg-indigo-500 hover:text-white transition-all active:scale-95 shadow-2xl px-12">Start Smart Review</button>
               </Tooltip>
               <Tooltip text="A fast-paced review of high-yield Science vocabulary." position="bottom">
-                <button onClick={onScienceSprint} className="w-full px-6 py-6 md:py-8 bg-emerald-600/20 text-emerald-400 rounded-[2rem] md:rounded-[3rem] font-black text-[10px] md:text-[11px] uppercase border border-emerald-500/30 hover:bg-emerald-600 hover:text-white transition-all">Science Sprint 🧪</button>
+                <button onClick={onScienceSprint} className="w-full px-6 py-6 md:py-8 bg-emerald-600/20 text-emerald-400 rounded-[2rem] md:rounded-[3rem] font-black text-[10px] md:text-[11px] uppercase border border-emerald-500/30 hover:bg-emerald-600 hover:text-white transition-all">Science Sprint</button>
               </Tooltip>
               <Tooltip text="Customize your study session: select difficulty, domains, and mastery levels." position="bottom">
-                <button onClick={() => onNavigate(AppScreen.STUDY_SETUP)} className="w-full px-6 py-6 md:py-8 bg-indigo-600/20 text-indigo-400 rounded-[2rem] md:rounded-[3rem] font-black text-[10px] md:text-[11px] uppercase border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition-all">Config Hub</button>
+                <button onClick={() => onNavigate(AppScreen.STUDY_SETUP)} className="w-full px-6 py-6 md:py-8 bg-indigo-600/20 text-indigo-400 rounded-[2rem] md:rounded-[3rem] font-black text-[10px] md:text-[11px] uppercase border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition-all">Custom Session</button>
               </Tooltip>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+              {[
+                { screen: AppScreen.ACHIEVEMENTS, label: 'Achievements', icon: Award },
+                { screen: AppScreen.LEADERBOARD, label: 'Rankings', icon: Trophy },
+                { screen: AppScreen.STORE, label: 'Rewards', icon: Gift },
+                { screen: AppScreen.AI_TUTOR, label: 'Tutor', icon: Bot }
+              ].map(item => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => onNavigate(item.screen)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-900/80 border border-slate-800 text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-slate-950 transition-all"
+                  >
+                    <Icon size={16} /> {item.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -249,14 +257,14 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end px-6 gap-4">
            <div className="space-y-1 text-center sm:text-left">
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter italic">Progress <span className="text-indigo-600">Audit</span></h2>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">Comparative Timeframe Analysis</p>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter italic">Progress <span className="text-indigo-600">Review</span></h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">Weekly goals and mastery growth</p>
            </div>
            <div className="flex flex-wrap justify-center gap-4">
              <button onClick={() => setIsEditingGoals(!isEditingGoals)} className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border transition-all ${isEditingGoals ? 'bg-indigo-600 text-white border-indigo-700 shadow-lg' : 'bg-white text-slate-400 border-slate-100 hover:text-indigo-600'}`}>
-               {isEditingGoals ? '🔒 Close Config' : '⚙️ Calibrate Goals'}
+               {isEditingGoals ? 'Close Goals' : 'Adjust Goals'}
              </button>
-             <button onClick={() => setShowForensics(!showForensics)} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">Forensics Mode</button>
+             <button onClick={() => setShowForensics(!showForensics)} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">Saved Data Check</button>
            </div>
         </div>
 
@@ -264,7 +272,7 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
         {isEditingGoals && (
           <div className="bg-white p-10 rounded-[3rem] border-2 border-indigo-100 shadow-xl space-y-8 animate-in slide-in-from-top-4 duration-500">
             <div className="flex justify-between items-center px-4">
-              <h3 className="text-xl font-black text-slate-900 italic">Goal <span className="text-indigo-500">Synthesis</span></h3>
+              <h3 className="text-xl font-black text-slate-900 italic">Goal <span className="text-indigo-500">Settings</span></h3>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Adjust mastery thresholds</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -320,8 +328,8 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
         <div className="lg:col-span-2 bg-white rounded-[2.5rem] md:rounded-[4rem] p-8 md:p-12 border border-slate-100 shadow-sm space-y-8 md:space-y-12">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
             <div className="text-center sm:text-left">
-              <h3 className="text-2xl sm:text-3xl font-black tracking-tighter text-slate-900 uppercase italic">Neural Pulse</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-1">7-Day Historical Retention Cycle</p>
+              <h3 className="text-2xl sm:text-3xl font-black tracking-tighter text-slate-900 uppercase italic">Study Activity</h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-1">7-day review and mastery trend</p>
             </div>
             <div className="flex gap-4 md:gap-6">
                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-400"></div><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mastery</span></div>
@@ -358,14 +366,14 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
           <div className="pt-12 border-t border-slate-50 space-y-6">
             <div className="flex justify-between items-center">
               <div className="space-y-1">
-                <h4 className="text-xl font-black italic text-slate-900 uppercase tracking-tighter">Domain <span className="text-indigo-600">Pulse</span></h4>
+                <h4 className="text-xl font-black italic text-slate-900 uppercase tracking-tighter">Domain <span className="text-indigo-600">Strengths</span></h4>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Top Academic Strengths</p>
               </div>
               <button 
                 onClick={() => setShowDomainAudit(true)}
                 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all"
               >
-                View Full Audit
+                View Full Report
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -398,24 +406,24 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
         </div>
 
         <div className="flex flex-col gap-8">
-          {/* NEURAL ARENA (GAMES HUB) TILE */}
+          {/* GAMES HUB TILE */}
           <div className="bg-gradient-to-br from-rose-500 to-amber-500 rounded-[4rem] p-10 shadow-2xl flex flex-col justify-center items-center text-center space-y-6 overflow-hidden relative group flex-1">
              <div className="text-7xl group-hover:scale-125 group-hover:-rotate-12 transition-all duration-700 relative z-10 drop-shadow-2xl">⚡</div>
              <div className="relative z-10">
-               <h3 className="text-2xl font-black text-white leading-tight italic mb-1 tracking-tighter uppercase">Neural Arena</h3>
-               <p className="text-white/80 text-[10px] font-black uppercase tracking-widest">Compete for XP & Credits</p>
+               <h3 className="text-2xl font-black text-white leading-tight italic mb-1 tracking-tighter uppercase">Practice Arena</h3>
+               <p className="text-white/80 text-[10px] font-black uppercase tracking-widest">Compete for XP and credits</p>
              </div>
-             <button onClick={() => onNavigate(AppScreen.GAME_HUB)} className="w-full py-5 bg-white text-slate-900 rounded-[2rem] font-black uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all shadow-2xl relative z-10 text-[10px] active:scale-95">Enter Arena</button>
+             <button onClick={() => onNavigate(AppScreen.GAME_HUB)} className="w-full py-5 bg-white text-slate-900 rounded-[2rem] font-black uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all shadow-2xl relative z-10 text-[10px] active:scale-95">Play Games</button>
              <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
           </div>
 
           <div className="bg-indigo-600 rounded-[3rem] p-8 shadow-xl flex flex-col justify-center items-center text-center space-y-4 overflow-hidden relative group">
              <div className="text-5xl group-hover:rotate-12 transition-transform duration-700 relative z-10 drop-shadow-2xl">📚</div>
              <div className="relative z-10">
-               <h3 className="text-xl font-black text-white leading-tight italic mb-1 tracking-tighter">Vault</h3>
-               <p className="text-indigo-100 text-[9px] font-black uppercase tracking-widest">Manage 2,250 Units</p>
+               <h3 className="text-xl font-black text-white leading-tight italic mb-1 tracking-tighter">Word Bank</h3>
+               <p className="text-indigo-100 text-[9px] font-black uppercase tracking-widest">Manage 2,250 words</p>
              </div>
-             <button onClick={() => onNavigate(AppScreen.WORD_BANK)} className="w-full py-4 bg-white text-slate-950 rounded-[1.5rem] font-black uppercase tracking-[0.2em] hover:bg-slate-950 hover:text-white transition-all shadow-xl relative z-10 text-[9px]">Enter Vault</button>
+             <button onClick={() => onNavigate(AppScreen.WORD_BANK)} className="w-full py-4 bg-white text-slate-950 rounded-[1.5rem] font-black uppercase tracking-[0.2em] hover:bg-slate-950 hover:text-white transition-all shadow-xl relative z-10 text-[9px]">Open Word Bank</button>
           </div>
         </div>
       </div>
@@ -426,7 +434,7 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
           <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[3rem] md:rounded-[4rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             <div className="p-8 md:p-12 bg-slate-900 text-white flex justify-between items-center shrink-0">
               <div>
-                <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic">Domain <span className="text-indigo-400">Intelligence Audit</span></h3>
+                <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic">Domain <span className="text-indigo-400">Mastery Report</span></h3>
                 <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-80 mt-1">Full breakdown of academic proficiency</p>
               </div>
               <button onClick={() => setShowDomainAudit(false)} className="w-12 h-12 md:w-14 md:h-14 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-rose-600 transition-all shrink-0">
@@ -504,7 +512,7 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
             </div>
 
             <div className="p-8 md:p-12 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
-              <button onClick={() => setShowDomainAudit(false)} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-xl">Close Audit</button>
+              <button onClick={() => setShowDomainAudit(false)} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-xl">Close Report</button>
             </div>
           </div>
         </div>
@@ -515,7 +523,7 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
           <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-[3rem] md:rounded-[4rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             <div className="p-8 md:p-12 bg-indigo-600 text-white flex justify-between items-center shrink-0">
               <div>
-                <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic">Titan <span className="text-indigo-200">Intelligence Guide</span></h3>
+                <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic">VocabVantage <span className="text-indigo-200">Guide</span></h3>
                 <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-80 mt-1">System Navigation & Data Management</p>
               </div>
               <button onClick={() => setShowHelp(false)} className="w-12 h-12 md:w-14 md:h-14 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all shrink-0">
@@ -576,7 +584,7 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                     <p className="text-sm text-slate-600 font-medium leading-relaxed">Starts a review session with 20 random words using Spaced Repetition logic.</p>
                   </div>
                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                    <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-2">Neural Arena</p>
+                    <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-2">Practice Arena</p>
                     <p className="text-sm text-slate-600 font-medium leading-relaxed">Gamified learning hub. Play games to earn XP and Credits while mastering vocabulary.</p>
                   </div>
                 </div>
@@ -593,15 +601,15 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                   <div className="flex gap-6 p-6 hover:bg-slate-50 rounded-3xl transition-all group">
                     <div className="mt-1 text-slate-300 group-hover:text-indigo-500 transition-colors"><Download size={20} /></div>
                     <div>
-                      <p className="font-black text-sm uppercase tracking-tight">Export Local Vault</p>
+                      <p className="font-black text-sm uppercase tracking-tight">Export Progress Backup</p>
                       <p className="text-xs text-slate-500 font-medium mt-1">Saves your progress (XP, Mastery, Credits) as a JSON file. Use this for your personal backup.</p>
                     </div>
                   </div>
                   <div className="flex gap-6 p-6 hover:bg-slate-50 rounded-3xl transition-all group">
                     <div className="mt-1 text-slate-300 group-hover:text-indigo-500 transition-colors"><Info size={20} /></div>
                     <div>
-                      <p className="font-black text-sm uppercase tracking-tight">Vault (Word Bank)</p>
-                      <p className="text-xs text-slate-500 font-medium mt-1">Inside the Vault, you can download a CSV backup of all 2,280 words or import a previously saved list.</p>
+                      <p className="font-black text-sm uppercase tracking-tight">Word Bank</p>
+                      <p className="text-xs text-slate-500 font-medium mt-1">Inside the Word Bank, you can download a CSV backup of all 2,280 words or import a previously saved list.</p>
                     </div>
                   </div>
                 </div>
@@ -615,14 +623,14 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
         </div>
       )}
 
-      {/* FORENSICS MODAL OVERLAY */}
+      {/* SAVED DATA MODAL OVERLAY */}
       {showForensics && (
          <div className="fixed inset-0 z-[100] bg-slate-950/98 backdrop-blur-3xl p-10 md:p-24 flex items-center justify-center animate-in fade-in zoom-in-95">
             <div className="max-w-4xl w-full h-full bg-slate-900 rounded-[4rem] border border-slate-800 shadow-2xl flex flex-col overflow-hidden">
                <div className="p-12 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
                   <div>
-                    <h4 className="text-3xl font-black uppercase tracking-tighter text-indigo-400 italic">Neural Log <span className="text-white">Forensics</span></h4>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Boot Diagnostics & System Integrity</p>
+                    <h4 className="text-3xl font-black uppercase tracking-tighter text-indigo-400 italic">Saved Data <span className="text-white">Check</span></h4>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Progress storage and sync health</p>
                   </div>
                   <button onClick={() => setShowForensics(false)} className="w-16 h-16 bg-slate-800 text-slate-400 rounded-3xl flex items-center justify-center hover:text-white hover:bg-rose-600 transition-all border border-slate-700 active:scale-90 text-2xl">✕</button>
                </div>
@@ -631,12 +639,12 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                   {/* DATA INTEGRITY AUDIT SECTION */}
                   <div className="p-10 bg-emerald-950/20 border-2 border-emerald-500/30 rounded-[3rem] space-y-6">
                     <div className="flex justify-between items-center">
-                      <h5 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Data Integrity Audit</h5>
+                      <h5 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Word Library Check</h5>
                       <span className="px-3 py-1 bg-emerald-500 text-white text-[8px] font-black rounded-full uppercase">Verified</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-1">
-                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Units in Vault</p>
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Words Loaded</p>
                         <p className="text-3xl font-black text-white">{words.length.toLocaleString()}</p>
                       </div>
                       <div className="space-y-1">
@@ -668,11 +676,11 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* SYSTEM SPECS */}
                     <div className="p-8 bg-slate-950 rounded-[2.5rem] border border-slate-800 flex flex-col justify-center">
-                       <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">Vault Payload</p>
+                       <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">Progress Backup Size</p>
                        <p className="text-2xl font-black text-white">{new Blob([JSON.stringify(progress)]).size.toLocaleString()} <span className="text-xs text-slate-600 uppercase">Bytes</span></p>
                     </div>
                     <div className="p-8 bg-slate-950 rounded-[2.5rem] border border-slate-800 flex flex-col justify-center">
-                       <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">State Protocol</p>
+                       <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">Save Version</p>
                        <p className="text-2xl font-black text-white">V{progress.version}.{progress.revision}</p>
                     </div>
 
@@ -717,15 +725,15 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                   <div className="p-10 bg-indigo-600/10 rounded-[3rem] border border-indigo-500/20">
                      <h5 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Regression Prevention Logic</h5>
                      <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                        The V21 Sentinel Protocol enforces <strong>write-lock guards</strong>. If memory revision lags behind disk revision, writes are blocked to prevent multi-tab collision. Current XP Integrity: <span className="text-emerald-400 font-black italic">VERIFIED</span>.
+                        VocabVantage checks local progress revisions before saving, which helps prevent older browser tabs from overwriting newer study progress. Current progress integrity: <span className="text-emerald-400 font-black italic">VERIFIED</span>.
                      </p>
                   </div>
                </div>
 
                <div className="p-12 border-t border-slate-800 bg-slate-950/50 flex flex-col md:flex-row gap-6">
-                  <button onClick={onRunQA} className="flex-1 py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-2xl hover:bg-indigo-500 active:scale-95 transition-all">Execute Persistence QA Harness</button>
-                  <button onClick={onExport} className="flex-1 py-6 bg-emerald-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-2xl hover:bg-emerald-500 active:scale-95 transition-all">Export Local Vault</button>
-                  <button onClick={() => setShowForensics(false)} className="flex-1 py-6 bg-slate-800 text-slate-300 rounded-[2rem] font-black uppercase text-[11px] tracking-widest border border-slate-700 hover:bg-slate-700 transition-all">Dismiss Diagnostics</button>
+                  <button onClick={onRunQA} className="flex-1 py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-2xl hover:bg-indigo-500 active:scale-95 transition-all">Run Save Check</button>
+                  <button onClick={onExport} className="flex-1 py-6 bg-emerald-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-2xl hover:bg-emerald-500 active:scale-95 transition-all">Export Progress</button>
+                  <button onClick={() => setShowForensics(false)} className="flex-1 py-6 bg-slate-800 text-slate-300 rounded-[2rem] font-black uppercase text-[11px] tracking-widest border border-slate-700 hover:bg-slate-700 transition-all">Close</button>
                </div>
             </div>
          </div>

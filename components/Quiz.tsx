@@ -5,7 +5,7 @@ import { buildLocalContextQuestion, ContextQuestion } from '../services/contextQ
 interface QuizProps {
   words: Word[];
   onFinish: (score: number) => void;
-  onWordResult: (wordId: string, term: string, isCorrect: boolean) => void;
+  onWordResult: (wordId: string, term: string, isCorrect: boolean, mode: QuestionMode) => void;
   onBack: () => void;
 }
 
@@ -121,7 +121,7 @@ const Quiz: React.FC<QuizProps> = ({ words, onFinish, onWordResult, onBack }) =>
     setIsAnswered(true);
     setLastCorrect(isCorrect);
     if (isCorrect) setScore(prev => prev + 1);
-    onWordResult(currentQuestion.word.id, currentQuestion.word.term, isCorrect);
+    onWordResult(currentQuestion.word.id, currentQuestion.word.term, isCorrect, currentQuestion.mode);
   };
 
   const handleSelect = (index: number) => {

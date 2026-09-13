@@ -82,7 +82,7 @@ const VisualVibe: React.FC<VisualVibeProps> = ({ words, onBack, onXP }) => {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 space-y-4">
                    <div className="text-5xl">🌫️</div>
-                   <p className="text-[10px] font-black uppercase tracking-widest">Image Protocol Failed</p>
+                   <p className="text-[10px] font-black uppercase tracking-widest">Image unavailable</p>
                 </div>
               )}
               {isAnswered && (

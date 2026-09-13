@@ -36,34 +36,34 @@ const RewardStore: React.FC<RewardStoreProps> = ({ credits, inventory, masteredC
 
   const highValuePrizes = [
     { 
-      name: '$10 Amazon Card', 
-      price: 35000, 
-      icon: '🎁', 
-      type: 'Verified Claim',
-      stock: 2,
-      minMastery: 750, // Massive barrier for free users
+      name: 'Hard Words Challenge',
+      price: 1200,
+      icon: '🎯',
+      type: 'Practice Unlock',
+      stock: 'Unlimited',
+      minMastery: 25,
       premiumOnly: false,
-      desc: 'Requires 750 Mastered Words. Manual audit of learning logs required.'
+      desc: 'Unlocks a focused challenge built from your weakest words and highest-value SAT traps.'
     },
     { 
-      name: '$50 Scholarship', 
-      price: 150000, 
-      icon: '💎', 
-      type: 'Elite Only',
-      stock: 1,
-      minMastery: 1500, // Extreme barrier
+      name: 'Advanced Context Set',
+      price: 2500,
+      icon: '📘',
+      type: 'Elite Practice',
+      stock: 'Unlimited',
+      minMastery: 100,
       premiumOnly: true,
-      desc: 'Elite Members Only. Requires 1,500 Mastered Words and ID Verification.'
+      desc: 'Adds a harder SAT-style context set for students ready for top-band vocabulary.'
     },
     { 
-      name: 'College Prep Raffle', 
-      price: 1000, 
-      icon: '🎟️', 
-      type: 'Sweepstakes',
+      name: 'Weekly Goal Boost',
+      price: 800,
+      icon: '⚡',
+      type: 'Motivation',
       stock: 'Unlimited',
       minMastery: 0,
       premiumOnly: false,
-      desc: 'Free: 1 Entry. Elite: 10 Entries (10x Odds). Monthly drawing.'
+      desc: 'Adds a temporary motivation boost for a focused weekly mastery push.'
     }
   ];
 
@@ -85,11 +85,10 @@ const RewardStore: React.FC<RewardStoreProps> = ({ credits, inventory, masteredC
       return;
     }
     
-    const waitTime = isPremium ? "1 hour" : "48 hours";
-    const confirmMsg = `Confirm Redemption Request:\n\n- Prize: ${prize.name}\n- Verification Queue: ${waitTime}\n- Audit Level: AI Pacing + Mastery Check\n\nProceed?`;
+    const confirmMsg = `Redeem ${prize.name} for ${prize.price.toLocaleString()} VC?`;
 
     if (window.confirm(confirmMsg)) {
-      setRedeemStatus(`Request logged. ${isPremium ? '⚡ PRIORITY' : 'Standard'} queue assigned. Expected audit completion in ${waitTime}.`);
+      setRedeemStatus(`${prize.name} is ready. Keep practicing from your dashboard to use it in your next study block.`);
     }
   };
 
@@ -99,7 +98,7 @@ const RewardStore: React.FC<RewardStoreProps> = ({ credits, inventory, masteredC
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4">
           <div className="bg-white p-10 rounded-[3rem] text-center shadow-2xl max-w-sm space-y-6">
             <div className="text-6xl">{isPremium ? '🚀' : '⏳'}</div>
-            <h2 className="text-2xl font-black text-slate-900">{isPremium ? 'Priority Audit' : 'Standard Audit'}</h2>
+            <h2 className="text-2xl font-black text-slate-900">{isPremium ? 'Priority Reward Ready' : 'Reward Ready'}</h2>
             <p className="text-slate-500 font-medium leading-relaxed">{redeemStatus}</p>
             <button onClick={() => setRedeemStatus(null)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Back to App</button>
           </div>
@@ -122,8 +121,8 @@ const RewardStore: React.FC<RewardStoreProps> = ({ credits, inventory, masteredC
       {!isPremium && (
         <div className="bg-gradient-to-r from-indigo-900 to-indigo-700 p-8 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-indigo-100">
            <div className="text-center md:text-left">
-              <h3 className="text-2xl font-black">Skip the 48h Audit Queue</h3>
-              <p className="text-indigo-100 text-sm font-medium">Elite members get instant audit priority and 10x Raffle Odds.</p>
+              <h3 className="text-2xl font-black">Unlock More Practice Options</h3>
+              <p className="text-indigo-100 text-sm font-medium">Elite members unlock advanced practice sets and extra challenge modes.</p>
            </div>
            <button onClick={onBack} className="bg-white text-indigo-900 px-8 py-4 rounded-2xl font-black text-xs hover:scale-105 transition-transform whitespace-nowrap">UPGRADE NOW ✨</button>
         </div>
@@ -174,7 +173,7 @@ const RewardStore: React.FC<RewardStoreProps> = ({ credits, inventory, masteredC
                     <div className="absolute inset-0 z-20 bg-slate-100/60 backdrop-blur-[4px] rounded-[2.5rem] flex flex-col items-center justify-center p-8 text-center">
                         <div className="text-4xl mb-3">{isLockedByPremium ? '💎' : '🔒'}</div>
                         <p className="text-[10px] font-black uppercase text-slate-900">
-                          {isLockedByPremium ? 'Elite Only' : `Master ${prize.minMastery} Words`}
+                        {isLockedByPremium ? 'Elite Only' : `Master ${prize.minMastery} Words`}
                         </p>
                     </div>
                   )}
@@ -193,14 +192,14 @@ const RewardStore: React.FC<RewardStoreProps> = ({ credits, inventory, masteredC
                   <div className="pt-6 border-t border-slate-50">
                     <div className="flex justify-between items-center mb-5">
                       <span className="text-lg font-black text-slate-900">{prize.price.toLocaleString()} <span className="text-xs text-slate-400">VC</span></span>
-                      {isPremium && prize.name.includes('Raffle') && <span className="text-[8px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded">10x ODDS</span>}
+                      {isPremium && prize.premiumOnly && <span className="text-[8px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded">ELITE</span>}
                     </div>
                     <button 
                       onClick={() => handleClaimRequest(prize)}
                       disabled={isLocked}
                       className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${prize.premiumOnly ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'} disabled:bg-slate-300`}
                     >
-                      {isLocked ? 'Locked' : 'Initiate Audit'}
+                      {isLocked ? 'Locked' : 'Redeem'}
                     </button>
                   </div>
                 </div>
@@ -212,9 +211,9 @@ const RewardStore: React.FC<RewardStoreProps> = ({ credits, inventory, masteredC
 
       <footer className="text-center pt-12">
         <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 max-w-2xl mx-auto shadow-sm">
-             <p className="text-[10px] text-slate-400 font-medium leading-relaxed uppercase tracking-widest mb-4">Risk Management Policy</p>
+             <p className="text-[10px] text-slate-400 font-medium leading-relaxed uppercase tracking-widest mb-4">Progress Integrity</p>
              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-               VocabVantage Mastery Gates are designed to reward dedicated students. Redemption requests are subject to AI Pacing Audits to prevent botting. Free users are placed in a 48-hour manual review queue. Elite users receive priority auditing and significant raffle multipliers. 
+               Rewards are tied to actual study progress, accuracy, and mastery gates so motivation stays connected to learning.
              </p>
         </div>
         <button onClick={onBack} className="mt-8 text-slate-400 font-bold hover:text-slate-900 transition-colors text-sm">Return to Dashboard</button>

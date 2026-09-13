@@ -86,7 +86,7 @@ const SpeedBlitz: React.FC<SpeedBlitzProps> = ({ words, onBack, onXP }) => {
       <div className="bg-white rounded-[3rem] p-12 text-center space-y-8 shadow-xl max-w-lg mx-auto border border-slate-100 animate-in zoom-in-95">
         <div className="text-6xl">⚡</div>
         <h2 className="text-4xl font-black text-slate-900 tracking-tight">Speed Blitz</h2>
-        <p className="text-slate-500 font-medium">Neural firing simulation. 30 seconds to validate as many definitions as possible.</p>
+        <p className="text-slate-500 font-medium">You have 30 seconds to match as many definitions as possible.</p>
         <button onClick={startGame} className="w-full bg-amber-500 text-white py-6 rounded-[2rem] font-black text-xl hover:bg-amber-600 shadow-xl shadow-amber-100">START BLITZ</button>
         <button onClick={onBack} className="text-slate-400 font-bold text-sm block mx-auto">Cancel</button>
       </div>
@@ -98,13 +98,13 @@ const SpeedBlitz: React.FC<SpeedBlitzProps> = ({ words, onBack, onXP }) => {
       <div className="bg-white rounded-[3rem] p-12 space-y-8 shadow-xl max-w-2xl mx-auto border border-slate-100 overflow-y-auto max-h-[90vh] no-scrollbar">
         <div className="text-center">
           <div className="text-6xl mb-4">🏆</div>
-          <h2 className="text-4xl font-black text-slate-900">Protocol Complete</h2>
+          <h2 className="text-4xl font-black text-slate-900">Round Complete</h2>
           <p className="text-6xl font-black text-amber-500 mt-2">{score}</p>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Precision: {Math.round((score / history.length) * 100) || 0}%</p>
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-100">
-           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">Session Memory Log</h3>
+           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">Round Review</h3>
            {history.map((h, i) => (
              <div key={i} className={`p-6 rounded-[2rem] border ${h.isCorrect ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
                 <div className="flex justify-between items-center mb-2">
