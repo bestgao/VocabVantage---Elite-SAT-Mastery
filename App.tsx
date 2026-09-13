@@ -618,13 +618,17 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     const weeklyGoal = Math.max(1, Number(progress.weeklyMasteryGoal || 50));
     const weeklyPercent = Math.min(100, Math.round((weeklyMastered / weeklyGoal) * 100));
 
+    const recommendedCount = dueWords > 0 ? Math.min(dueWords, 20) : 20;
+    const estimatedMinutes = Math.max(3, Math.ceil(recommendedCount * 0.4));
+
     return {
       dueWords,
       mastered,
       weakWords,
       weeklyMastered,
       weeklyGoal,
-      weeklyPercent
+      weeklyPercent,
+      estimatedMinutes
     };
   }, [progress]);
 
@@ -793,11 +797,11 @@ const App: React.FC<AppProps> = ({ bootData }) => {
         </div>
       )}
 
-      <nav className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 sticky top-0 z-50 h-20 md:h-24 shadow-2xl flex items-center px-4 md:px-6 border-b border-indigo-500/20">
+      <nav className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 sticky top-0 z-50 h-16 md:h-24 shadow-2xl flex items-center px-4 md:px-6 border-b border-indigo-500/20">
         <div className="max-w-7xl mx-auto w-full flex justify-between items-center">
           <div className="flex items-center space-x-3 md:space-x-5 cursor-pointer group" onClick={() => setScreen(AppScreen.DASHBOARD)}>
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-rose-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white font-black text-xl md:text-2xl shadow-xl transition-transform group-hover:rotate-12">V</div>
-            <span className="font-black text-xl md:text-3xl tracking-tighter text-white group-hover:text-indigo-400 transition-colors">VocabVantage</span>
+            <div className="w-9 h-9 md:w-12 md:h-12 bg-rose-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white font-black text-xl md:text-2xl shadow-xl transition-transform group-hover:rotate-12">V</div>
+            <span className="font-black text-lg md:text-3xl tracking-tighter text-white group-hover:text-indigo-400 transition-colors">VocabVantage</span>
           </div>
           <div className="flex items-center space-x-4 md:space-x-8">
             <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-900 rounded-xl border border-slate-800">
@@ -813,7 +817,12 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                <div className="flex items-center gap-2 mb-1">
                  <User size={12} className="text-indigo-400" />
                  <span className="text-[10px] text-slate-400 truncate max-w-[150px] lowercase tracking-tight">
-                   {(!userEmail || userEmail === 'guest') ? 'Guest Mode' : userEmail}
+                   <span className="md:hidden">
+                     {(!userEmail || userEmail === 'guest') ? 'Guest' : 'Signed in'}
+                   </span>
+                   <span className="hidden md:inline">
+                     {(!userEmail || userEmail === 'guest') ? 'Guest Mode' : userEmail}
+                   </span>
                  </span>
                </div>
                <span className="text-lg md:text-2xl">{progress.xp.toLocaleString()} <span className="text-[8px] md:text-[10px] text-slate-500 uppercase">XP</span></span>
@@ -853,7 +862,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
 
               <button
                 onClick={() => startSmartReview()}
-                className="w-full text-left bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-[2rem] p-6 shadow-xl active:scale-[0.99] transition-transform"
+                className="w-full text-left bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-[2rem] p-5 shadow-xl active:scale-[0.99] transition-transform"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -868,12 +877,15 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                     <p className="text-sm text-indigo-100 mt-2">
                       Adaptive practice based on what you are most likely to forget.
                     </p>
+                    <p className="text-xs font-bold text-indigo-100/90 mt-2">
+                      About {mobileLearningStats.estimatedMinutes} min
+                    </p>
                   </div>
                   <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
                     <ChevronRight size={28} />
                   </div>
                 </div>
-                <div className="mt-5 bg-white text-indigo-700 rounded-2xl py-4 text-center font-black">
+                <div className="mt-4 bg-white text-indigo-700 rounded-2xl py-3.5 text-center font-black">
                   START REVIEW
                 </div>
               </button>
