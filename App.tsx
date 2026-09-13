@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { UserProgress, AppScreen, MasteryLevel, Word, WordStat } from './types';
 import { GET_MASTER_CORE } from './database';
@@ -33,6 +33,7 @@ import StudySessionSetup from './components/StudySessionSetup';
 import SessionSummary from './components/SessionSummary';
 import GameHub from './components/GameHub';
 import Quiz from './components/Quiz';
+import DiagnosticAssessment, { DiagnosticResult } from './components/DiagnosticAssessment';
 import {
   LogIn,
   User,
@@ -97,7 +98,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 
 // Titan Protocol V42-WORD-INTELLIGENCE
 const App: React.FC<AppProps> = ({ bootData }) => {
-  const [screen, setScreen] = useState<AppScreen | 'SUMMARY'>(AppScreen.DASHBOARD);
+  const [screen, setScreen] = useState<AppScreen | 'SUMMARY' | 'DIAGNOSTIC'>(AppScreen.DASHBOARD);
   const [sessionWords, setSessionWords] = useState<Word[]>([]);
   const [sessionResults, setSessionResults] = useState({ mastered: 0, reviews: 0, xp: 0 });
   const [titanLibrary, setTitanLibrary] = useState<Word[]>([]);
@@ -589,6 +590,21 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     setScreen(AppScreen.LEARN);
   }, [fullLibrary]);
 
+  const handleDiagnosticComplete = useCallback((result: DiagnosticResult) => {
+    updateProgress(prev => ({
+      ...prev,
+      diagnosticScore: result.readinessScore,
+      diagnosticEstimatedKnownWords: result.estimatedKnownWords,
+      diagnosticCorrect: result.correct,
+      diagnosticTotal: result.total,
+      diagnosticWeakestDomain: result.weakestDomain,
+      diagnosticCompletedAt: result.completedAt,
+      recommendedDailyWords: result.recommendedDailyWords,
+      dailyMasteryGoal: result.recommendedDailyWords
+    }), true);
+    setScreen(AppScreen.DASHBOARD);
+  }, [updateProgress]);
+
   const mobileLearningStats = useMemo(() => {
     const now = Date.now();
     const dueWords = Object.values(progress.wordSRS || {}).filter(srs => {
@@ -674,7 +690,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
               <form onSubmit={handleLogin} className="space-y-6">
                 {loginError && (
                   <div className="bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-2xl text-xs font-bold animate-shake">
-                    ⚠️ {loginError}
+                    âš ï¸ {loginError}
                   </div>
                 )}
                 <div className="space-y-3">
@@ -705,7 +721,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
 
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
+                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
@@ -754,7 +770,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                     }}
                     className="w-full py-6 bg-indigo-50 text-indigo-600 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] border border-indigo-100 hover:bg-indigo-100 transition-all"
                   >
-                    🚀 Continue as Guest
+                    ðŸš€ Continue as Guest
                   </button>
                 </div>
 
@@ -789,7 +805,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       {celebration && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none p-4">
           <div className="bg-white/90 backdrop-blur-3xl p-8 md:p-16 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl border border-indigo-200 text-center animate-in zoom-in-50 fade-in duration-500 pointer-events-auto max-w-sm w-full">
-            <div className="text-6xl md:text-8xl mb-4 md:mb-6">🏆</div>
+            <div className="text-6xl md:text-8xl mb-4 md:mb-6">ðŸ†</div>
             <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">Goal Achieved!</h2>
             <p className="text-indigo-600 font-bold mt-2 uppercase tracking-widest text-[10px] md:text-xs">You reached today's mastery goal</p>
             <button onClick={() => setCelebration(false)} className="mt-8 md:mt-10 w-full md:w-auto px-10 md:px-12 py-4 md:py-5 bg-slate-900 text-white rounded-[1.5rem] md:rounded-[2rem] font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-black transition-all">Keep Learning</button>
@@ -861,6 +877,33 @@ const App: React.FC<AppProps> = ({ bootData }) => {
               </div>
 
               <button
+                onClick={() => setScreen('DIAGNOSTIC')}
+                className="w-full bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm text-left"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">SAT Vocabulary Readiness</p>
+                    {typeof progress.diagnosticScore === 'number' ? (
+                      <>
+                        <p className="text-4xl font-black text-slate-900 mt-1">{progress.diagnosticScore}<span className="text-lg text-slate-400">/100</span></p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          ~{(progress.diagnosticEstimatedKnownWords || 0).toLocaleString()} words estimated â€¢ Focus: {progress.diagnosticWeakestDomain || 'General'}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xl font-black text-slate-900 mt-1">Take your 5-minute placement test</p>
+                        <p className="text-xs text-slate-500 mt-1">Get a personalized daily study plan.</p>
+                      </>
+                    )}
+                  </div>
+                  <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                    <ChevronRight size={24} />
+                  </div>
+                </div>
+              </button>
+
+              <button
                 onClick={() => startSmartReview()}
                 className="w-full text-left bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-[2rem] p-5 shadow-xl active:scale-[0.99] transition-transform"
               >
@@ -879,6 +922,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                     </p>
                     <p className="text-xs font-bold text-indigo-100/90 mt-2">
                       About {mobileLearningStats.estimatedMinutes} min
+                      {typeof progress.recommendedDailyWords === 'number' ? ` â€¢ Goal: ${progress.recommendedDailyWords} words/day` : ''}
                     </p>
                   </div>
                   <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
@@ -1019,6 +1063,13 @@ const App: React.FC<AppProps> = ({ bootData }) => {
             </div>
           </>
         )}
+        {screen === 'DIAGNOSTIC' && (
+          <DiagnosticAssessment
+            words={fullLibrary}
+            onComplete={handleDiagnosticComplete}
+            onBack={() => setScreen(AppScreen.DASHBOARD)}
+          />
+        )}
         {screen === AppScreen.LEARN && (
           <Flashcards 
             words={sessionWords} 
@@ -1124,3 +1175,4 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   );
 };
 export default App;
+
