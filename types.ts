@@ -1,4 +1,4 @@
-﻿
+
 export type MasteryLevel = 0 | 1 | 2 | 3; 
 
 export interface SessionConfig {

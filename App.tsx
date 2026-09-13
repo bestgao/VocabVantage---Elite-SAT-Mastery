@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { UserProgress, AppScreen, MasteryLevel, Word, WordStat } from './types';
 import { GET_MASTER_CORE } from './database';
@@ -690,7 +690,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
               <form onSubmit={handleLogin} className="space-y-6">
                 {loginError && (
                   <div className="bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-2xl text-xs font-bold animate-shake">
-                    âš ï¸ {loginError}
+                    Warning: {loginError}
                   </div>
                 )}
                 <div className="space-y-3">
@@ -721,7 +721,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
 
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                      placeholder="********"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
@@ -770,7 +770,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                     }}
                     className="w-full py-6 bg-indigo-50 text-indigo-600 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] border border-indigo-100 hover:bg-indigo-100 transition-all"
                   >
-                    ðŸš€ Continue as Guest
+                    Continue as Guest
                   </button>
                 </div>
 
@@ -805,7 +805,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       {celebration && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none p-4">
           <div className="bg-white/90 backdrop-blur-3xl p-8 md:p-16 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl border border-indigo-200 text-center animate-in zoom-in-50 fade-in duration-500 pointer-events-auto max-w-sm w-full">
-            <div className="text-6xl md:text-8xl mb-4 md:mb-6">ðŸ†</div>
+            <div className="text-6xl md:text-8xl mb-4 md:mb-6">&#127942;</div>
             <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">Goal Achieved!</h2>
             <p className="text-indigo-600 font-bold mt-2 uppercase tracking-widest text-[10px] md:text-xs">You reached today's mastery goal</p>
             <button onClick={() => setCelebration(false)} className="mt-8 md:mt-10 w-full md:w-auto px-10 md:px-12 py-4 md:py-5 bg-slate-900 text-white rounded-[1.5rem] md:rounded-[2rem] font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-black transition-all">Keep Learning</button>
@@ -887,7 +887,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                       <>
                         <p className="text-4xl font-black text-slate-900 mt-1">{progress.diagnosticScore}<span className="text-lg text-slate-400">/100</span></p>
                         <p className="text-xs text-slate-500 mt-1">
-                          ~{(progress.diagnosticEstimatedKnownWords || 0).toLocaleString()} words estimated â€¢ Focus: {progress.diagnosticWeakestDomain || 'General'}
+                          ~{(progress.diagnosticEstimatedKnownWords || 0).toLocaleString()} words estimated | Focus: {progress.diagnosticWeakestDomain || 'General'}
                         </p>
                       </>
                     ) : (
@@ -922,7 +922,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                     </p>
                     <p className="text-xs font-bold text-indigo-100/90 mt-2">
                       About {mobileLearningStats.estimatedMinutes} min
-                      {typeof progress.recommendedDailyWords === 'number' ? ` â€¢ Goal: ${progress.recommendedDailyWords} words/day` : ''}
+                      {typeof progress.recommendedDailyWords === 'number' ? ` | Goal: ${progress.recommendedDailyWords} words/day` : ''}
                     </p>
                   </div>
                   <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
