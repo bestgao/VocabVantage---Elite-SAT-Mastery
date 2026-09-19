@@ -27,6 +27,14 @@ export interface ActivityEntry {
   xpGained: number;
 }
 
+export interface DiagnosticSnapshot {
+  score: number;
+  correct: number;
+  total: number;
+  weakestDomain: string;
+  completedAt: number;
+}
+
 export interface WordStat {
   wordId: string;
   term: string;
@@ -60,13 +68,16 @@ export interface UserProgress {
   milestonesClaimed: string[];
   lastConfig: SessionConfig;
   customWords: Word[];
+  onboardingCompletedAt?: number;
   diagnosticScore?: number;
   diagnosticEstimatedKnownWords?: number;
   diagnosticCorrect?: number;
   diagnosticTotal?: number;
   diagnosticWeakestDomain?: string;
   diagnosticCompletedAt?: number;
+  diagnosticHistory?: DiagnosticSnapshot[];
   recommendedDailyWords?: number;
+  highScores?: Record<string, number>;
 }
 
 export interface Word {
@@ -110,4 +121,3 @@ export enum AppScreen {
   STORE = 'STORE',
   ACHIEVEMENTS = 'ACHIEVEMENTS'
 }
-

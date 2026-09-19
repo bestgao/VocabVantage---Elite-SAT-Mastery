@@ -12,17 +12,17 @@ const MedalGallery: React.FC<MedalGalleryProps> = ({ progress, onBack, onClaimMi
   const consistencyMilestones = [
     { id: 'cons_7', title: '1 Week: Scholar', days: 7, bonus: 1000, icon: '📅', desc: 'One full week of sticking to your daily plan.' },
     { id: 'cons_14', title: '2 Weeks: Discipline', days: 14, bonus: 2500, icon: '🛡️', desc: 'Half a month of unbroken mastery focus.' },
-    { id: 'cons_30', title: '1 Month: Titan', days: 30, bonus: 6000, icon: '🏆', desc: 'One month of absolute commitment.' },
+    { id: 'cons_30', title: '1 Month: Champion', days: 30, bonus: 6000, icon: '🏆', desc: 'One month of steady commitment.' },
     { id: 'cons_90', title: 'Quarter Year: Legend', days: 90, bonus: 25000, icon: '🌌', desc: '3 months. Your vocabulary is now in the top tier.' },
-    { id: 'cons_180', title: 'Half Year: Immortal', days: 180, bonus: 65000, icon: '🌋', desc: '6 months. Cognitive dominance achieved.' },
+    { id: 'cons_180', title: 'Half Year: Expert', days: 180, bonus: 65000, icon: '🌋', desc: '6 months of durable vocabulary growth.' },
     { id: 'cons_365', title: 'Full Year: Aether', days: 365, bonus: 180000, icon: '✨', desc: 'One full year. Your future self thanks you.' },
   ];
 
   return (
     <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in duration-500 pb-24">
       <header className="text-center space-y-3">
-        <h2 className="text-6xl font-black text-slate-900 tracking-tight">Milestone Vault</h2>
-        <p className="text-slate-500 font-medium">Massive Credit payouts for those who stick to the protocol.</p>
+        <h2 className="text-6xl font-black text-slate-900 tracking-tight">Milestones</h2>
+        <p className="text-slate-500 font-medium">Earn Vantage Credits by sticking to your study plan.</p>
       </header>
 
       <section className="space-y-8">

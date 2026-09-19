@@ -8,25 +8,23 @@ interface LeaderboardProps {
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({ userXP, userHighScores, onBack }) => {
-  // Mocked global data for the "Global Competition" feel
-  const globalRankings = [
-    { name: 'Alex M.', xp: 12450, avatar: '👤', rank: 1 },
-    { name: 'Sarah J.', xp: 11200, avatar: '🦊', rank: 2 },
-    { name: 'Chris K.', xp: 9800, avatar: '🦁', rank: 3 },
-    { name: 'Jordan W.', xp: 8500, avatar: '🐘', rank: 4 },
-    { name: 'Taylor P.', xp: 7200, avatar: '🦉', rank: 5 },
+  const benchmarkRankings = [
+    { name: 'Top 1% Target', xp: 12500, avatar: '1', rank: 1 },
+    { name: 'Elite Target', xp: 10000, avatar: '2', rank: 2 },
+    { name: 'Advanced Target', xp: 7500, avatar: '3', rank: 3 },
+    { name: 'Strong Target', xp: 5000, avatar: '4', rank: 4 },
+    { name: 'Momentum Target', xp: 2500, avatar: '5', rank: 5 },
   ];
 
-  // Insert user into list
-  const userRank = userXP > globalRankings[0].xp ? 1 : 
-                   userXP > globalRankings[2].xp ? 3 :
+  const userRank = userXP > benchmarkRankings[0].xp ? 1 :
+                   userXP > benchmarkRankings[2].xp ? 3 :
                    userXP > 0 ? 124 : '---';
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in slide-in-from-right-10 duration-500 pb-12">
       <header className="text-center space-y-2">
-        <h2 className="text-4xl font-black text-slate-900 tracking-tight">Global Rankings</h2>
-        <p className="text-slate-500 font-medium">Competition breeds excellence. Can you hit #1?</p>
+        <h2 className="text-4xl font-black text-slate-900 tracking-tight">Progress Rankings</h2>
+        <p className="text-slate-500 font-medium">Compare your XP and game records against clear practice targets.</p>
       </header>
 
       <div className="bg-slate-900 text-white rounded-[3rem] p-8 shadow-2xl relative overflow-hidden">
@@ -53,7 +51,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ userXP, userHighScores, onBac
           <span>Experience Points</span>
         </div>
         <div className="divide-y divide-slate-100">
-          {globalRankings.map((student) => (
+          {benchmarkRankings.map((student) => (
             <div key={student.rank} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
               <div className="flex items-center gap-4">
                 <span className={`w-8 h-8 flex items-center justify-center rounded-lg font-black text-xs ${
@@ -63,7 +61,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ userXP, userHighScores, onBac
                 }`}>
                   {student.rank}
                 </span>
-                <span className="text-2xl">{student.avatar}</span>
+                <span className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-black">{student.avatar}</span>
                 <span className="font-bold text-slate-900">{student.name}</span>
               </div>
               <span className="font-black text-slate-900">{student.xp.toLocaleString()} XP</span>

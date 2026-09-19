@@ -127,7 +127,7 @@ const SynonymSprint: React.FC<SynonymSprintProps> = ({ words, onBack, onXP }) =>
     return (
       <div className="bg-white rounded-[3.5rem] p-12 space-y-10 shadow-2xl max-w-4xl mx-auto border border-slate-100 overflow-y-auto max-h-[90vh] no-scrollbar">
         <div className="text-center">
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Pedagogical Audit</h2>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Sprint Review</h2>
           <p className="text-7xl font-black text-emerald-500 mt-2">{score}</p>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">+ {score * 15} XP Earned</p>
         </div>

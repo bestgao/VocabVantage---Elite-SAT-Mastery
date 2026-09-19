@@ -202,7 +202,7 @@ const SyntaxSniper: React.FC<SyntaxSniperProps> = ({ onBack, onXP }) => {
       <div className="bg-white rounded-[4rem] p-12 space-y-10 shadow-2xl max-w-5xl mx-auto border border-slate-100 overflow-y-auto max-h-[92vh] no-scrollbar pb-24">
         <div className="text-center">
           <div className="text-6xl mb-4">🔬</div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Forensic <span className="text-indigo-600">Audit</span></h2>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Grammar <span className="text-indigo-600">Review</span></h2>
           <p className="text-7xl font-black text-indigo-600 mt-2">{score}</p>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">+ {score * 30} XP Earned</p>
         </div>
@@ -212,24 +212,24 @@ const SyntaxSniper: React.FC<SyntaxSniperProps> = ({ onBack, onXP }) => {
              <div key={i} className={`p-10 rounded-[3.5rem] border-2 flex flex-col gap-10 transition-all ${record.isCorrect ? 'bg-emerald-50/40 border-emerald-100' : record.isTimeout ? 'bg-amber-50/40 border-amber-100' : 'bg-rose-50/40 border-rose-100 shadow-xl shadow-rose-900/5'}`}>
                 <div className="flex justify-between items-center px-2">
                    <div className="flex items-center gap-3">
-                      <p className="text-[11px] font-black text-indigo-600 uppercase tracking-widest bg-white px-4 py-1.5 rounded-full border border-slate-100 shadow-sm">Record ID #{i+1}</p>
+                      <p className="text-[11px] font-black text-indigo-600 uppercase tracking-widest bg-white px-4 py-1.5 rounded-full border border-slate-100 shadow-sm">Question #{i+1}</p>
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest italic">{record.rule}</span>
                    </div>
                    <span className={`px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest shadow-sm ${record.isCorrect ? 'bg-emerald-600 text-white' : record.isTimeout ? 'bg-amber-600 text-white' : 'bg-rose-600 text-white'}`}>
-                      {record.isCorrect ? 'Neutralized' : record.isTimeout ? 'Timed Out' : 'Detection Breach'}
+                      {record.isCorrect ? 'Correct' : record.isTimeout ? 'Timed Out' : 'Review Needed'}
                    </span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-8">
                    <div className="space-y-6">
                       <div className="p-10 bg-white/80 rounded-[3rem] border border-slate-200 shadow-inner relative group">
-                         <span className="absolute -top-3 left-10 bg-rose-600 text-white px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">Linguistic Breach (Error)</span>
+                         <span className="absolute -top-3 left-10 bg-rose-600 text-white px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">Original Error</span>
                          <p className="text-slate-700 leading-loose italic text-xl">
                            "{renderHighlightedBreach(record.originalText, record.errorIndex)}"
                          </p>
                       </div>
                       <div className="p-10 bg-white rounded-[3rem] border-2 border-emerald-200 shadow-xl relative">
-                         <span className="absolute -top-3 left-10 bg-emerald-600 text-white px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">Forensic Calibration (Fix)</span>
+                         <span className="absolute -top-3 left-10 bg-emerald-600 text-white px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">Corrected Version</span>
                          <p className="text-slate-900 leading-loose text-2xl">
                            "{renderHighlightedCalibration(record.correctedText, record.targetCorrection)}"
                          </p>
@@ -240,7 +240,7 @@ const SyntaxSniper: React.FC<SyntaxSniperProps> = ({ onBack, onXP }) => {
                       <div className="relative z-10 space-y-8">
                         <div className="flex items-center gap-3">
                           <span className="w-3 h-3 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_15px_rgba(99,102,241,0.5)]"></span>
-                          <p className="text-indigo-400 font-black text-[11px] uppercase tracking-[0.25em]">Neural Analysis Engine</p>
+                          <p className="text-indigo-400 font-black text-[11px] uppercase tracking-[0.25em]">Grammar Explanation</p>
                         </div>
                         <p className="text-lg font-medium leading-relaxed text-slate-300 pl-8 border-l-4 border-slate-800 italic">
                            {record.explanation}
@@ -283,7 +283,7 @@ const SyntaxSniper: React.FC<SyntaxSniperProps> = ({ onBack, onXP }) => {
     return (
       <div className="text-center p-24 animate-pulse text-indigo-400 font-black uppercase tracking-[0.5em] flex flex-col items-center gap-6">
         <div className="w-20 h-20 border-8 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        Syncing Neural Data Streams...
+        Loading grammar challenges...
       </div>
     );
   }

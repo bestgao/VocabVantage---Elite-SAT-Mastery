@@ -5,7 +5,7 @@ import { GET_MASTER_CORE } from './database';
 import { XP_PER_WORD_UPGRADE } from './constants';
 import { STABLE_KEY, saveVault, BootResult, runPersistenceQA, INITIAL_PROGRESS, deepHydrate } from './persistence';
 import { auth, db } from './firebase';
-import { buildSmartReview, nextSRS, reviewQualityFromResult } from './services/adaptive';
+import { buildSmartReview, nextMasteryFromReview, nextSRS, priorityForWord, reviewQualityFromResult } from './services/adaptive';
 
 
 import { 
@@ -34,6 +34,11 @@ import SessionSummary from './components/SessionSummary';
 import GameHub from './components/GameHub';
 import Quiz from './components/Quiz';
 import DiagnosticAssessment, { DiagnosticResult } from './components/DiagnosticAssessment';
+import Onboarding from './components/Onboarding';
+import Leaderboard from './components/Leaderboard';
+import MedalGallery from './components/MedalGallery';
+import RewardStore from './components/RewardStore';
+import AITutor from './components/AITutor';
 import {
   LogIn,
   User,
@@ -41,6 +46,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
+  WifiOff,
   LogOut,
   Eye,
   EyeOff,
@@ -48,11 +54,9 @@ import {
   BookOpen,
   Gamepad2,
   LibraryBig,
-  ClipboardList,
-  ChevronRight
+  ChevronRight,
+  Trophy
 } from 'lucide-react';
-
-import { motion, AnimatePresence } from 'motion/react';
 
 interface AppProps {
   bootData: BootResult;
@@ -87,8 +91,9 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
       return (
         <div className="p-10 text-red-600">
           <h1 className="text-2xl font-bold">Something went wrong.</h1>
-          <pre className="mt-4 p-4 bg-slate-100 rounded overflow-auto">{this.state.error?.toString()}</pre>
-          <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="mt-4 px-4 py-2 bg-red-600 text-white rounded">Reset Application</button>
+          <p className="mt-2 text-sm text-slate-600">Refresh the page to try again. Your saved progress is left intact.</p>
+          <pre className="mt-4 p-4 bg-slate-100 rounded overflow-auto text-xs">{this.state.error?.toString()}</pre>
+          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-slate-900 text-white rounded">Reload App</button>
         </div>
       );
     }
@@ -96,7 +101,6 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-// Titan Protocol V42-WORD-INTELLIGENCE
 const App: React.FC<AppProps> = ({ bootData }) => {
   const [screen, setScreen] = useState<AppScreen | 'SUMMARY' | 'DIAGNOSTIC'>(AppScreen.DASHBOARD);
   const [sessionWords, setSessionWords] = useState<Word[]>([]);
@@ -111,6 +115,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
 
   const [isInitialSyncDone, setIsInitialSyncDone] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -128,6 +133,16 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   const lastSeenRevisionRef = useRef<number>(bootData.progress.revision);
   const isDirtyRef = useRef(false);
   const debounceTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
 
   // Firebase Auth Listener
   useEffect(() => {
@@ -333,9 +348,11 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     wordId: string,
     term: string,
     isCorrect: boolean,
-    newLevel: MasteryLevel
+    requestedLevel: MasteryLevel,
+    mode: 'self-rating' | 'recognition' | 'context' | 'written' = 'recognition'
   ) => {
     const prev = progressRef.current;
+    const oldLevel = prev.wordMastery[wordId] || 0;
     const currentStat = prev.wordStats[wordId] || {
       wordId,
       term,
@@ -348,7 +365,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       masteryLevel: 0
     };
 
-    const updatedStat: WordStat = {
+    const nextStat: WordStat = {
       ...currentStat,
       attempts: currentStat.attempts + 1,
       correct: currentStat.correct + (isCorrect ? 1 : 0),
@@ -356,20 +373,25 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       streak: isCorrect ? currentStat.streak + 1 : 0,
       lastResult: isCorrect ? 'correct' : 'wrong',
       lastSeenAt: Date.now(),
-      masteryLevel: newLevel
+      masteryLevel: oldLevel
     };
 
     const confidence =
       !isCorrect ? 'low' :
-      updatedStat.streak >= 3 ? 'high' :
+      nextStat.streak >= 3 ? 'high' :
       'medium';
 
     const quality = reviewQualityFromResult(isCorrect, confidence);
     const updatedSRS = nextSRS(prev.wordSRS[wordId], quality);
+    const finalLevel = nextMasteryFromReview(oldLevel, nextStat, updatedSRS, isCorrect, mode, requestedLevel);
+    const updatedStat: WordStat = {
+      ...nextStat,
+      masteryLevel: finalLevel
+    };
 
     const next: UserProgress = {
       ...prev,
-      wordMastery: { ...prev.wordMastery, [wordId]: newLevel },
+      wordMastery: { ...prev.wordMastery, [wordId]: finalLevel },
       wordStats: { ...prev.wordStats, [wordId]: updatedStat },
       wordSRS: { ...prev.wordSRS, [wordId]: updatedSRS },
       updatedAt: Date.now()
@@ -518,14 +540,21 @@ const App: React.FC<AppProps> = ({ bootData }) => {
     });
   }, [commit]);
 
-  const handleXP = useCallback((amount: number) => {
+  const handleXP = useCallback((amount: number, gameId?: string, score?: number) => {
     const today = getLocalKey();
     updateProgress(prev => {
       const currentLedger = prev.activityLedger[today] || { date: today, mastered: 0, reviewed: 0, xpGained: 0 };
+      const nextHighScores = gameId && typeof score === 'number'
+        ? {
+            ...(prev.highScores || {}),
+            [gameId]: Math.max(prev.highScores?.[gameId] || 0, score)
+          }
+        : prev.highScores;
       return {
         ...prev,
         xp: prev.xp + amount,
         credits: prev.credits + Math.floor(amount / 10), // Conversion: 10XP = 1 Credit
+        highScores: nextHighScores,
         activityLedger: {
           ...prev.activityLedger,
           [today]: {
@@ -540,13 +569,40 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   const handleWordUpdate = useCallback((id: string, newLevel: MasteryLevel, term: string, isCorrect: boolean = true) => {
     const today = getLocalKey();
     
-    // 1. Record granular result
-    handleWordResult(id, term, isCorrect, newLevel);
-
+    let pendingCloudWrite: { stat: WordStat; srs: ReturnType<typeof nextSRS> } | null = null as { stat: WordStat; srs: ReturnType<typeof nextSRS> } | null;
     updateProgress(prev => {
       const oldLevel = prev.wordMastery[id] || 0;
-      const reachedMastery = newLevel === 3 && oldLevel < 3;
-      const xpGained = newLevel > oldLevel ? (newLevel - oldLevel) * XP_PER_WORD_UPGRADE : 5;
+      const currentStat = prev.wordStats[id] || {
+        wordId: id,
+        term,
+        attempts: 0,
+        correct: 0,
+        wrong: 0,
+        streak: 0,
+        lastResult: 'none',
+        lastSeenAt: 0,
+        masteryLevel: oldLevel
+      };
+      const nextStat: WordStat = {
+        ...currentStat,
+        attempts: currentStat.attempts + 1,
+        correct: currentStat.correct + (isCorrect ? 1 : 0),
+        wrong: currentStat.wrong + (isCorrect ? 0 : 1),
+        streak: isCorrect ? currentStat.streak + 1 : 0,
+        lastResult: isCorrect ? 'correct' : 'wrong',
+        lastSeenAt: Date.now(),
+        masteryLevel: oldLevel
+      };
+      const confidence =
+        !isCorrect ? 'low' :
+        nextStat.streak >= 3 ? 'high' :
+        'medium';
+      const updatedSRS = nextSRS(prev.wordSRS[id], reviewQualityFromResult(isCorrect, confidence));
+      const finalLevel = nextMasteryFromReview(oldLevel, nextStat, updatedSRS, isCorrect, 'self-rating', newLevel);
+      const updatedStat: WordStat = { ...nextStat, masteryLevel: finalLevel };
+      pendingCloudWrite = { stat: updatedStat, srs: updatedSRS };
+      const reachedMastery = finalLevel === 3 && oldLevel < 3;
+      const xpGained = finalLevel > oldLevel ? (finalLevel - oldLevel) * XP_PER_WORD_UPGRADE : 5;
       
       const currentLedger = prev.activityLedger[today] || { date: today, mastered: 0, reviewed: 0, xpGained: 0 };
       const oldDailyMastered = currentLedger.mastered;
@@ -564,7 +620,9 @@ const App: React.FC<AppProps> = ({ bootData }) => {
 
       return {
         ...prev,
-        wordMastery: { ...prev.wordMastery, [id]: newLevel },
+        wordMastery: { ...prev.wordMastery, [id]: finalLevel },
+        wordStats: { ...prev.wordStats, [id]: updatedStat },
+        wordSRS: { ...prev.wordSRS, [id]: updatedSRS },
         xp: prev.xp + xpGained,
         credits: prev.credits + (reachedMastery ? 50 : 0),
         activityLedger: {
@@ -578,7 +636,18 @@ const App: React.FC<AppProps> = ({ bootData }) => {
         }
       };
     }, false);
-  }, [updateProgress]);
+
+    if (user && pendingCloudWrite) {
+      const statRef = doc(db, 'users', user.uid, 'wordStats', id);
+      setDoc(statRef, {
+        ...pendingCloudWrite.stat,
+        srs: pendingCloudWrite.srs,
+        updatedAt: Date.now()
+      }, { merge: true }).catch(error => {
+        console.error('Failed to push changed word data', error);
+      });
+    }
+  }, [updateProgress, user]);
 
   const startSmartReview = useCallback((customWords?: Word[]) => {
     const smartWords = customWords || buildSmartReview(
@@ -586,6 +655,10 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       progressRef.current,
       20
     );
+    if (smartWords.length === 0) {
+      alert('The word library is still loading. Try again in a moment.');
+      return;
+    }
     setSessionWords(smartWords);
     setScreen(AppScreen.LEARN);
   }, [fullLibrary]);
@@ -593,12 +666,23 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   const handleDiagnosticComplete = useCallback((result: DiagnosticResult) => {
     updateProgress(prev => ({
       ...prev,
+      onboardingCompletedAt: prev.onboardingCompletedAt || Date.now(),
       diagnosticScore: result.readinessScore,
       diagnosticEstimatedKnownWords: result.estimatedKnownWords,
       diagnosticCorrect: result.correct,
       diagnosticTotal: result.total,
       diagnosticWeakestDomain: result.weakestDomain,
       diagnosticCompletedAt: result.completedAt,
+      diagnosticHistory: [
+        ...(prev.diagnosticHistory || []),
+        {
+          score: result.readinessScore,
+          correct: result.correct,
+          total: result.total,
+          weakestDomain: result.weakestDomain,
+          completedAt: result.completedAt
+        }
+      ].slice(-10),
       recommendedDailyWords: result.recommendedDailyWords,
       dailyMasteryGoal: result.recommendedDailyWords
     }), true);
@@ -623,6 +707,11 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       })
       .slice(0, 3);
 
+    const recommendedWords = fullLibrary
+      .map(word => priorityForWord(word, progress))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
     let weeklyMastered = 0;
     for (let i = 0; i < 7; i++) {
       const d = new Date();
@@ -641,12 +730,70 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       dueWords,
       mastered,
       weakWords,
+      recommendedWords,
       weeklyMastered,
       weeklyGoal,
       weeklyPercent,
       estimatedMinutes
     };
-  }, [progress]);
+  }, [fullLibrary, progress]);
+
+  const completeOnboarding = useCallback(() => {
+    updateProgress(prev => ({
+      ...prev,
+      onboardingCompletedAt: prev.onboardingCompletedAt || Date.now()
+    }), true);
+    setScreen(AppScreen.DASHBOARD);
+  }, [updateProgress]);
+
+  const masteredCount = useMemo(() => (
+    Object.values(progress.wordMastery || {}).filter(level => level === 3).length
+  ), [progress.wordMastery]);
+
+  const academicIntegrity = useMemo(() => {
+    const stats = Object.values(progress.wordStats || {});
+    const attempts = stats.reduce((sum, stat) => sum + stat.attempts, 0);
+    if (attempts < 10) return 100;
+    const correct = stats.reduce((sum, stat) => sum + stat.correct, 0);
+    return Math.round((correct / Math.max(1, attempts)) * 100);
+  }, [progress.wordStats]);
+
+  const handlePurchase = useCallback((cost: number, item: keyof UserProgress['inventory']) => {
+    if (progressRef.current.credits < cost) return false;
+    updateProgress(prev => ({
+      ...prev,
+      credits: prev.credits - cost,
+      inventory: {
+        ...prev.inventory,
+        [item]: Number(prev.inventory[item] || 0) + 1
+      }
+    }), true);
+    return true;
+  }, [updateProgress]);
+
+  const handleRedeemReward = useCallback((cost: number, rewardId: string) => {
+    if (progressRef.current.credits < cost) return false;
+    updateProgress(prev => ({
+      ...prev,
+      credits: prev.credits - cost,
+      milestonesClaimed: [
+        ...prev.milestonesClaimed,
+        `reward:${rewardId}:${Date.now()}`
+      ]
+    }), true);
+    return true;
+  }, [updateProgress]);
+
+  const handleClaimMilestone = useCallback((id: string, bonus: number) => {
+    updateProgress(prev => {
+      if (prev.milestonesClaimed.includes(id)) return prev;
+      return {
+        ...prev,
+        credits: prev.credits + bonus,
+        milestonesClaimed: [...prev.milestonesClaimed, id]
+      };
+    }, true);
+  }, [updateProgress]);
 
   const showMobileNav = [
     AppScreen.DASHBOARD,
@@ -661,39 +808,31 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-x-hidden relative">
       
       {/* Login Overlay - Highest Priority */}
-      <AnimatePresence>
-        {(!userEmail) && (
-          <motion.div 
-            key="login-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -100, scale: 1.1 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-[999999] bg-slate-950 flex items-center justify-center p-4 backdrop-blur-2xl"
+      {!userEmail && (
+          <div
+            className="fixed inset-0 z-[999999] bg-slate-950 flex items-start md:items-center justify-center p-4 py-6 overflow-y-auto backdrop-blur-2xl"
           >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-white w-full max-w-md rounded-[3.5rem] p-12 shadow-2xl space-y-10 relative overflow-hidden border border-white/20"
+            <div
+              className="bg-white w-full max-w-md rounded-[2rem] md:rounded-[3.5rem] p-4 sm:p-8 md:p-12 shadow-2xl space-y-3 md:space-y-10 relative overflow-hidden border border-white/20"
             >
               <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-indigo-600 via-violet-600 to-rose-600"></div>
               
-              <div className="text-center space-y-6">
-                <div className="w-24 h-24 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white font-black text-5xl shadow-2xl mx-auto rotate-6 animate-titan">V</div>
+              <div className="text-center space-y-3 md:space-y-6">
+                <div className="w-12 h-12 md:w-24 md:h-24 bg-indigo-600 rounded-[1.1rem] md:rounded-[2rem] flex items-center justify-center text-white font-black text-3xl md:text-5xl shadow-2xl mx-auto rotate-6 animate-titan">V</div>
                 <div className="space-y-2">
-                  <h2 className="text-5xl font-black text-slate-900 tracking-tighter">Vocab<span className="text-indigo-600">Vantage</span></h2>
+                  <h2 className="text-2xl md:text-5xl font-black text-slate-900 tracking-tighter">Vocab<span className="text-indigo-600">Vantage</span></h2>
                   <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">SAT Vocabulary Mastery</p>
                 </div>
-                <p className="text-sm text-slate-400 font-medium leading-relaxed">Learn the right words, review them at the right time, and keep your progress synced across devices.</p>
+                <p className="text-xs md:text-sm text-slate-400 font-medium leading-relaxed">Learn the right words, review them at the right time, and keep your progress synced across devices.</p>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-6">
+              <form onSubmit={handleLogin} className="space-y-3 md:space-y-6">
                 {loginError && (
                   <div className="bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-2xl text-xs font-bold animate-shake">
                     Warning: {loginError}
                   </div>
                 )}
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-3">Email Address</label>
                   <div className="relative">
                     <User className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-300" size={24} />
@@ -703,12 +842,12 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
-                      className="w-full pl-20 pr-8 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-black text-xl text-slate-900"
+                      className="w-full pl-16 md:pl-20 pr-6 md:pr-8 py-3.5 md:py-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-black text-lg md:text-xl text-slate-900"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-3">
                     Password
                   </label>
@@ -725,7 +864,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
-                      className="w-full pl-20 pr-20 py-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-black text-xl text-slate-900"
+                      className="w-full pl-16 md:pl-20 pr-16 md:pr-20 py-3.5 md:py-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-black text-lg md:text-xl text-slate-900"
                     />
 
                     <button
@@ -756,7 +895,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                   <button 
                     type="submit" 
                     disabled={isLoggingIn}
-                    className="w-full py-7 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
+                    className="w-full py-3.5 md:py-7 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
                   >
                     {isLoggingIn ? <Loader2 className="animate-spin" size={24} /> : <LogIn size={24} />}
                     {isLoggingIn ? 'Signing in...' : isSignUp ? 'Create Account' : 'Sign In'}
@@ -764,11 +903,8 @@ const App: React.FC<AppProps> = ({ bootData }) => {
 
                   <button 
                     type="button"
-                    onClick={() => {
-                      console.log("Entering Guest Mode...");
-                      setUserEmail('guest_user');
-                    }}
-                    className="w-full py-6 bg-indigo-50 text-indigo-600 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] border border-indigo-100 hover:bg-indigo-100 transition-all"
+                    onClick={() => setUserEmail('guest')}
+                    className="w-full py-3.5 md:py-6 bg-indigo-50 text-indigo-600 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] border border-indigo-100 hover:bg-indigo-100 transition-all"
                   >
                     Continue as Guest
                   </button>
@@ -785,22 +921,15 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                 </div>
               </form>
 
-              <div className="pt-8 border-t border-slate-50 text-center space-y-6">
+              <div className="hidden sm:block pt-8 border-t border-slate-50 text-center space-y-4">
                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Your progress can sync across devices</p>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setUserEmail('guest');
-                  }}
-                  className="text-[11px] text-indigo-600 font-black uppercase tracking-widest hover:text-indigo-800 transition-colors bg-indigo-50 px-6 py-3 rounded-xl border border-indigo-100"
-                >
-                  Continue as Guest (No Sync)
-                </button>
+                <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                  Guest mode saves on this device. Sign in when you want cloud sync.
+                </p>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
 
       {celebration && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none p-4">
@@ -813,6 +942,8 @@ const App: React.FC<AppProps> = ({ bootData }) => {
         </div>
       )}
 
+      {userEmail && (
+      <>
       <nav className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 sticky top-0 z-50 h-16 md:h-24 shadow-2xl flex items-center px-4 md:px-6 border-b border-indigo-500/20">
         <div className="max-w-7xl mx-auto w-full flex justify-between items-center">
           <div className="flex items-center space-x-3 md:space-x-5 cursor-pointer group" onClick={() => setScreen(AppScreen.DASHBOARD)}>
@@ -820,13 +951,15 @@ const App: React.FC<AppProps> = ({ bootData }) => {
             <span className="font-black text-lg md:text-3xl tracking-tighter text-white group-hover:text-indigo-400 transition-colors">VocabVantage</span>
           </div>
           <div className="flex items-center space-x-4 md:space-x-8">
-            <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-900 rounded-xl border border-slate-800">
-              {syncStatus === 'syncing' ? <Loader2 className="animate-spin text-indigo-400" size={14} /> : 
+            <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-900 rounded-xl border border-slate-800" aria-live="polite">
+              {!isOnline ? <WifiOff className="text-amber-400" size={14} /> :
+               syncStatus === 'syncing' ? <Loader2 className="animate-spin text-indigo-400" size={14} /> :
                syncStatus === 'success' ? <CheckCircle2 className="text-emerald-400" size={14} /> :
                syncStatus === 'error' ? <AlertTriangle className="text-rose-400" size={14} /> :
-               <CloudSync className="text-slate-500" size={14} />}
+               !user ? <CloudSync className="text-slate-500" size={14} /> :
+               <CheckCircle2 className="text-slate-500" size={14} />}
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                {syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'success' ? 'Synced' : syncStatus === 'error' ? 'Sync Error' : 'Cloud Active'}
+                {!isOnline ? 'Offline Save' : !user ? 'Local Save' : syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'success' ? 'Synced' : syncStatus === 'error' ? 'Sync Error' : 'Cloud Ready'}
               </span>
             </div>
             <div className="flex flex-col items-end leading-tight text-white font-black">
@@ -834,18 +967,18 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                  <User size={12} className="text-indigo-400" />
                  <span className="text-[10px] text-slate-400 truncate max-w-[150px] lowercase tracking-tight">
                    <span className="md:hidden">
-                     {(!userEmail || userEmail === 'guest') ? 'Guest' : 'Signed in'}
+                     {!user ? 'Guest' : 'Signed in'}
                    </span>
                    <span className="hidden md:inline">
-                     {(!userEmail || userEmail === 'guest') ? 'Guest Mode' : userEmail}
+                     {!user ? 'Guest Mode' : userEmail}
                    </span>
                  </span>
                </div>
                <span className="text-lg md:text-2xl">{progress.xp.toLocaleString()} <span className="text-[8px] md:text-[10px] text-slate-500 uppercase">XP</span></span>
                <div className="flex items-center gap-2">
                  <span className="text-indigo-400 text-[8px] md:text-[10px] uppercase tracking-widest">Rev {lastSeenRevisionRef.current}</span>
-                 {(user && userEmail !== 'guest') ? (
-                   <button onClick={handleLogout} className="p-1 bg-slate-900 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all" title="Logout / Switch User">
+                 {user ? (
+                   <button onClick={handleLogout} className="p-1 bg-slate-900 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all" title="Logout / Switch User" aria-label="Log out or switch user">
                      <LogOut size={12} />
                    </button>
                  ) : (
@@ -855,6 +988,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                      }} 
                      className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-[8px] uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg animate-pulse" 
                      title="Login to Sync"
+                     aria-label="Open sign in screen"
                    >
                      Login
                    </button>
@@ -866,7 +1000,16 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       </nav>
 
       <main className="flex-1 max-w-7xl mx-auto p-4 pb-28 md:p-12 w-full overflow-x-hidden">
-        {screen === AppScreen.DASHBOARD && (
+        {screen === AppScreen.DASHBOARD && !progress.onboardingCompletedAt && (
+          <Onboarding
+            onStartDiagnostic={() => {
+              completeOnboarding();
+              setScreen('DIAGNOSTIC');
+            }}
+            onSkip={completeOnboarding}
+          />
+        )}
+        {screen === AppScreen.DASHBOARD && progress.onboardingCompletedAt && (
           <>
             <section className="md:hidden space-y-5 pb-24">
               <div className="pt-2">
@@ -1008,6 +1151,38 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                 </div>
               )}
 
+              {mobileLearningStats.recommendedWords.length > 0 && (
+                <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-black text-slate-900">Next best words</p>
+                      <p className="text-xs text-slate-400 mt-1">Highest-value picks for today</p>
+                    </div>
+                    <button
+                      onClick={() => startSmartReview(mobileLearningStats.recommendedWords.map(item => item.word))}
+                      className="text-xs font-black text-indigo-600"
+                    >
+                      START
+                    </button>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    {mobileLearningStats.recommendedWords.map(item => (
+                      <button
+                        key={item.word.id}
+                        onClick={() => startSmartReview([item.word])}
+                        className="w-full flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-left"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-black text-slate-900 truncate">{item.word.term}</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 truncate">{item.reason}</p>
+                        </div>
+                        <ChevronRight size={18} className="text-slate-300 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <p className="font-black text-slate-900 mb-3">Quick practice</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -1040,17 +1215,11 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                 onNavigate={setScreen} 
                 onUpdateGoal={(type, val) => updateProgress(prev => ({ ...prev, [type]: val }), true)}
                 onQuickStart={startSmartReview}
-                onReset={() => {
-              if (window.confirm("Nuclear Reset? All data will be wiped.")) {
-                localStorage.clear();
-                window.location.reload();
-              }
-            }}
             onExport={() => {
               const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(progress));
               const downloadAnchorNode = document.createElement('a');
               downloadAnchorNode.setAttribute("href", dataStr);
-              downloadAnchorNode.setAttribute("download", `vault_v20_sentinel.json`);
+              downloadAnchorNode.setAttribute("download", `vocabvantage-progress-backup.json`);
               document.body.appendChild(downloadAnchorNode);
               downloadAnchorNode.click();
               downloadAnchorNode.remove();
@@ -1098,12 +1267,49 @@ const App: React.FC<AppProps> = ({ bootData }) => {
               setSessionResults({ mastered: 0, reviews: 10, xp: score * 10 });
               setScreen('SUMMARY');
             }} 
-            onWordResult={(id, term, isCorrect) => {
+            onWordResult={(id, term, isCorrect, mode) => {
               const currentLevel = progress.wordMastery[id] || 0;
-              // Quiz doesn't automatically upgrade level, but records the attempt
-              handleWordResult(id, term, isCorrect, currentLevel);
+              handleWordResult(
+                id,
+                term,
+                isCorrect,
+                Math.min(3, currentLevel + 1) as MasteryLevel,
+                mode === 'written' ? 'written' : mode === 'context' ? 'context' : 'recognition'
+              );
             }}
             onBack={() => setScreen(AppScreen.DASHBOARD)} 
+          />
+        )}
+        {screen === AppScreen.LEADERBOARD && (
+          <Leaderboard
+            userXP={progress.xp}
+            userHighScores={progress.highScores || {}}
+            onBack={() => setScreen(AppScreen.DASHBOARD)}
+          />
+        )}
+        {screen === AppScreen.ACHIEVEMENTS && (
+          <MedalGallery
+            progress={progress}
+            onBack={() => setScreen(AppScreen.DASHBOARD)}
+            onClaimMilestone={handleClaimMilestone}
+          />
+        )}
+        {screen === AppScreen.STORE && (
+          <RewardStore
+            credits={progress.credits}
+            inventory={progress.inventory}
+            masteredCount={masteredCount}
+            academicIntegrity={academicIntegrity}
+            onPurchase={handlePurchase}
+            onRedeemReward={handleRedeemReward}
+            onBack={() => setScreen(AppScreen.DASHBOARD)}
+          />
+        )}
+        {screen === AppScreen.AI_TUTOR && (
+          <AITutor
+            words={fullLibrary}
+            progress={progress}
+            onBack={() => setScreen(AppScreen.DASHBOARD)}
           />
         )}
         {screen === 'SUMMARY' && <SessionSummary results={sessionResults} onContinue={() => setScreen(AppScreen.DASHBOARD)} />}
@@ -1148,8 +1354,8 @@ const App: React.FC<AppProps> = ({ bootData }) => {
               { id: AppScreen.DASHBOARD, label: 'Home', icon: Home },
               { id: AppScreen.STUDY_SETUP, label: 'Learn', icon: BookOpen },
               { id: AppScreen.GAME_HUB, label: 'Games', icon: Gamepad2 },
-              { id: AppScreen.WORD_BANK, label: 'Words', icon: LibraryBig },
-              { id: AppScreen.QUIZ, label: 'Quiz', icon: ClipboardList }
+              { id: AppScreen.ACHIEVEMENTS, label: 'Goals', icon: Trophy },
+              { id: AppScreen.WORD_BANK, label: 'Words', icon: LibraryBig }
             ].map(item => {
               const Icon = item.icon;
               const active = screen === item.id;
@@ -1170,9 +1376,10 @@ const App: React.FC<AppProps> = ({ bootData }) => {
           </div>
         </nav>
       )}
+      </>
+      )}
     </div>
     </ErrorBoundary>
   );
 };
 export default App;
-

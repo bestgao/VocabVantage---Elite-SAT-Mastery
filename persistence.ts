@@ -33,6 +33,7 @@ export const INITIAL_PROGRESS: UserProgress = {
   quarterlyMasteryGoal: 500,
   annualMasteryGoal: 1500,
   milestonesClaimed: [],
+  onboardingCompletedAt: undefined,
   lastConfig: { 
     levels: ['Core', 'Medium', 'Advanced'], 
     freqs: ['High', 'Mid', 'Low'], 
@@ -40,7 +41,9 @@ export const INITIAL_PROGRESS: UserProgress = {
     domains: [], // Empty means "All" in V42
     highYieldOnly: false
   },
-  customWords: []
+  customWords: [],
+  diagnosticHistory: [],
+  highScores: {}
 };
 
 /**

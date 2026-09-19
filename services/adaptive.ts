@@ -1,4 +1,4 @@
-import { MasteryLevel, UserProgress, Word, WordSRS, WordStat } from '../types';
+import type { MasteryLevel, UserProgress, Word, WordSRS, WordStat } from '../types';
 
 const DAY = 24 * 60 * 60 * 1000;
 export type ReviewQuality = 'again' | 'hard' | 'good' | 'easy';
@@ -82,4 +82,27 @@ export function reviewQualityFromResult(isCorrect: boolean, confidence: 'low' | 
   if (confidence === 'low') return 'hard';
   if (confidence === 'high') return 'easy';
   return 'good';
+}
+
+export function nextMasteryFromReview(
+  previousLevel: MasteryLevel,
+  stat: WordStat,
+  srs: WordSRS,
+  isCorrect: boolean,
+  mode: 'self-rating' | 'recognition' | 'context' | 'written' = 'self-rating',
+  requestedLevel?: MasteryLevel
+): MasteryLevel {
+  if (!isCorrect) return Math.max(0, Math.min(previousLevel, 1)) as MasteryLevel;
+
+  const evidenceLevel = masteryFromEvidence(stat, srs);
+  const modeCap: MasteryLevel =
+    mode === 'written' ? 3 :
+    mode === 'context' ? 2 :
+    mode === 'recognition' ? 2 :
+    3;
+
+  const requested = requestedLevel ?? Math.min(3, previousLevel + 1) as MasteryLevel;
+  const next = Math.max(previousLevel, Math.min(requested, evidenceLevel, modeCap));
+
+  return next as MasteryLevel;
 }
