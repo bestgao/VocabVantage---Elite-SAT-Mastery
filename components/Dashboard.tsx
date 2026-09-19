@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { UserProgress, AppScreen, MasteryLevel, Word } from '../types';
 import { MASTERY_COLORS } from '../constants';
 import { Award, Bot, Gift, HelpCircle, Trophy, X, Info, ShieldCheck, Database, Download } from 'lucide-react';
+import { priorityForWord } from '../services/adaptive';
 import Tooltip from './Tooltip';
 
 interface DashboardProps {
@@ -77,6 +78,13 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
     })).sort((a, b) => b.percent - a.percent);
   }, [words, progress.wordMastery]);
 
+  const focusQueue = useMemo(() => {
+    return words
+      .map(word => priorityForWord(word, progress))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+  }, [words, progress]);
+
   const auditData = useMemo(() => {
     return [
       { key: 'dailyMasteryGoal', label: 'Daily', days: 1, goal: progress.dailyMasteryGoal },
@@ -110,7 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
 
   const maxActivity = Math.max(...last7Days.map(d => d.reviewed), 10);
   const totalMastered = Object.values(progress.wordMastery).filter(l => l === 3).length;
-  const librarySize = 2250; 
+  const librarySize = Math.max(words.length, 1); 
   const stability = Math.round((totalMastered / librarySize) * 100);
 
   const shareApp = () => {
@@ -164,7 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 md:gap-8 pt-4">
-               <Tooltip text="Percentage of the 2,250 SAT words you have fully mastered.">
+               <Tooltip text="Percentage of the SAT word library you have fully mastered.">
                  <div className="space-y-1">
                    <p className="text-4xl md:text-5xl font-black">{stability}%</p>
                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Library Mastery</p>
@@ -234,9 +242,9 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                       return (
                         <Tooltip key={lvl} text={`${config.label.split(':')[1]} words: ${count} units.`}>
                           <div className="space-y-2">
-                             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                                <span className={config.text}>{config.label.split(':')[1]}</span>
-                                <span className="text-slate-500">{count} Units</span>
+                             <div className="flex justify-between gap-3 text-[10px] font-black uppercase tracking-widest">
+                                <span className={`${config.text} truncate`}>{config.label.split(':')[1]}</span>
+                                <span className="text-slate-500 whitespace-nowrap">{count} Words</span>
                              </div>
                              <div className="h-3 bg-slate-950 rounded-full border border-slate-800 overflow-hidden">
                                 <div className={`h-full ${config.text.replace('text-', 'bg-')} transition-all duration-1000`} style={{ width: `${p}%` }} />
@@ -406,6 +414,43 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
         </div>
 
         <div className="flex flex-col gap-8">
+          {/* DAILY FOCUS TILE */}
+          <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm space-y-6">
+             <div className="flex items-start justify-between gap-4">
+               <div>
+                 <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Adaptive Focus</p>
+                 <h3 className="text-2xl font-black text-slate-900 tracking-tight mt-1">Next best words</h3>
+                 <p className="text-xs text-slate-500 font-medium mt-2">Ranked by due date, errors, SAT yield, and forgetting risk.</p>
+               </div>
+               <button
+                 onClick={() => onQuickStart(focusQueue.map(item => item.word))}
+                 className="px-4 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all"
+               >
+                 Start
+               </button>
+             </div>
+
+             <div className="space-y-3">
+               {focusQueue.map(item => (
+                 <button
+                   key={item.word.id}
+                   onClick={() => onQuickStart([item.word])}
+                   className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 text-left hover:border-indigo-200 hover:bg-indigo-50 transition-all"
+                 >
+                   <div className="flex items-center justify-between gap-4">
+                     <div className="min-w-0">
+                       <p className="font-black text-slate-900 truncate">{item.word.term}</p>
+                       <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 truncate">{item.reason}</p>
+                     </div>
+                     <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase shrink-0 ${item.due ? 'bg-rose-100 text-rose-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                       {item.due ? 'Due' : 'Soon'}
+                     </span>
+                   </div>
+                 </button>
+               ))}
+             </div>
+          </div>
+
           {/* GAMES HUB TILE */}
           <div className="bg-gradient-to-br from-rose-500 to-amber-500 rounded-[4rem] p-10 shadow-2xl flex flex-col justify-center items-center text-center space-y-6 overflow-hidden relative group flex-1">
              <div className="text-7xl group-hover:scale-125 group-hover:-rotate-12 transition-all duration-700 relative z-10 drop-shadow-2xl">⚡</div>
@@ -421,7 +466,7 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
              <div className="text-5xl group-hover:rotate-12 transition-transform duration-700 relative z-10 drop-shadow-2xl">📚</div>
              <div className="relative z-10">
                <h3 className="text-xl font-black text-white leading-tight italic mb-1 tracking-tighter">Word Bank</h3>
-               <p className="text-indigo-100 text-[9px] font-black uppercase tracking-widest">Manage 2,250 words</p>
+               <p className="text-indigo-100 text-[9px] font-black uppercase tracking-widest">Manage {words.length.toLocaleString()} words</p>
              </div>
              <button onClick={() => onNavigate(AppScreen.WORD_BANK)} className="w-full py-4 bg-white text-slate-950 rounded-[1.5rem] font-black uppercase tracking-[0.2em] hover:bg-slate-950 hover:text-white transition-all shadow-xl relative z-10 text-[9px]">Open Word Bank</button>
           </div>

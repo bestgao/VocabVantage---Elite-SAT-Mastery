@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { masteryFromEvidence, nextMasteryFromReview, nextSRS } from '../services/adaptive';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { masteryFromEvidence, nextMasteryFromReview, nextSRS } from '../services/adaptive.ts';
 
 describe('adaptive learning', () => {
   it('schedules failed words quickly', () => {
     const s = nextSRS(undefined, 'again', 0);
-    expect(s.intervalDays).toBeLessThan(1);
+    assert.ok(s.intervalDays < 1);
   });
 
   it('requires evidence before verified mastery', () => {
@@ -12,7 +13,7 @@ describe('adaptive learning', () => {
       wordId: 'x', term: 'test', attempts: 2, correct: 2, wrong: 0,
       streak: 2, lastResult: 'correct', lastSeenAt: 0, masteryLevel: 2
     }, { lastReviewed: '', nextReviewAt: '', intervalDays: 3 });
-    expect(level).not.toBe(3);
+    assert.notEqual(level, 3);
   });
 
   it('allows mastery after repeated spaced success', () => {
@@ -20,7 +21,7 @@ describe('adaptive learning', () => {
       wordId: 'x', term: 'test', attempts: 7, correct: 7, wrong: 0,
       streak: 4, lastResult: 'correct', lastSeenAt: 0, masteryLevel: 2
     }, { lastReviewed: '', nextReviewAt: '', intervalDays: 21 });
-    expect(level).toBe(3);
+    assert.equal(level, 3);
   });
 
   it('does not promote a word to mastered without evidence', () => {
@@ -30,7 +31,7 @@ describe('adaptive learning', () => {
     };
     const srs = { lastReviewed: '', nextReviewAt: '', intervalDays: 3 };
     const level = nextMasteryFromReview(0, stat, srs, true, 'self-rating', 3);
-    expect(level).toBe(1);
+    assert.equal(level, 1);
   });
 
   it('keeps recognition-only quiz evidence below mastery', () => {
@@ -40,6 +41,6 @@ describe('adaptive learning', () => {
     };
     const srs = { lastReviewed: '', nextReviewAt: '', intervalDays: 21 };
     const level = nextMasteryFromReview(2, stat, srs, true, 'recognition', 3);
-    expect(level).toBe(2);
+    assert.equal(level, 2);
   });
 });

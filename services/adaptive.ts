@@ -1,4 +1,4 @@
-import { MasteryLevel, UserProgress, Word, WordSRS, WordStat } from '../types';
+import type { MasteryLevel, UserProgress, Word, WordSRS, WordStat } from '../types';
 
 const DAY = 24 * 60 * 60 * 1000;
 export type ReviewQuality = 'again' | 'hard' | 'good' | 'easy';

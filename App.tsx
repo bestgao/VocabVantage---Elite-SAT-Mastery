@@ -5,7 +5,7 @@ import { GET_MASTER_CORE } from './database';
 import { XP_PER_WORD_UPGRADE } from './constants';
 import { STABLE_KEY, saveVault, BootResult, runPersistenceQA, INITIAL_PROGRESS, deepHydrate } from './persistence';
 import { auth, db } from './firebase';
-import { buildSmartReview, nextMasteryFromReview, nextSRS, reviewQualityFromResult } from './services/adaptive';
+import { buildSmartReview, nextMasteryFromReview, nextSRS, priorityForWord, reviewQualityFromResult } from './services/adaptive';
 
 
 import { 
@@ -655,6 +655,10 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       progressRef.current,
       20
     );
+    if (smartWords.length === 0) {
+      alert('The word library is still loading. Try again in a moment.');
+      return;
+    }
     setSessionWords(smartWords);
     setScreen(AppScreen.LEARN);
   }, [fullLibrary]);
@@ -703,6 +707,11 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       })
       .slice(0, 3);
 
+    const recommendedWords = fullLibrary
+      .map(word => priorityForWord(word, progress))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
     let weeklyMastered = 0;
     for (let i = 0; i < 7; i++) {
       const d = new Date();
@@ -721,12 +730,13 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       dueWords,
       mastered,
       weakWords,
+      recommendedWords,
       weeklyMastered,
       weeklyGoal,
       weeklyPercent,
       estimatedMinutes
     };
-  }, [progress]);
+  }, [fullLibrary, progress]);
 
   const completeOnboarding = useCallback(() => {
     updateProgress(prev => ({
@@ -757,6 +767,19 @@ const App: React.FC<AppProps> = ({ bootData }) => {
         ...prev.inventory,
         [item]: Number(prev.inventory[item] || 0) + 1
       }
+    }), true);
+    return true;
+  }, [updateProgress]);
+
+  const handleRedeemReward = useCallback((cost: number, rewardId: string) => {
+    if (progressRef.current.credits < cost) return false;
+    updateProgress(prev => ({
+      ...prev,
+      credits: prev.credits - cost,
+      milestonesClaimed: [
+        ...prev.milestonesClaimed,
+        `reward:${rewardId}:${Date.now()}`
+      ]
     }), true);
     return true;
   }, [updateProgress]);
@@ -1128,6 +1151,38 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                 </div>
               )}
 
+              {mobileLearningStats.recommendedWords.length > 0 && (
+                <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-black text-slate-900">Next best words</p>
+                      <p className="text-xs text-slate-400 mt-1">Highest-value picks for today</p>
+                    </div>
+                    <button
+                      onClick={() => startSmartReview(mobileLearningStats.recommendedWords.map(item => item.word))}
+                      className="text-xs font-black text-indigo-600"
+                    >
+                      START
+                    </button>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    {mobileLearningStats.recommendedWords.map(item => (
+                      <button
+                        key={item.word.id}
+                        onClick={() => startSmartReview([item.word])}
+                        className="w-full flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-left"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-black text-slate-900 truncate">{item.word.term}</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 truncate">{item.reason}</p>
+                        </div>
+                        <ChevronRight size={18} className="text-slate-300 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <p className="font-black text-slate-900 mb-3">Quick practice</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -1245,8 +1300,8 @@ const App: React.FC<AppProps> = ({ bootData }) => {
             inventory={progress.inventory}
             masteredCount={masteredCount}
             academicIntegrity={academicIntegrity}
-            isPremium={false}
             onPurchase={handlePurchase}
+            onRedeemReward={handleRedeemReward}
             onBack={() => setScreen(AppScreen.DASHBOARD)}
           />
         )}
