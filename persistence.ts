@@ -22,7 +22,7 @@ export const INITIAL_PROGRESS: UserProgress = {
   wordSRS: {},
   wordStats: {},
   activityLedger: {},
-  streak: 1,
+  streak: 0,
   lastActive: new Date().toISOString(),
   xp: 0,
   credits: 500,

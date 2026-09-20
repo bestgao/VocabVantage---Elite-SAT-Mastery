@@ -139,13 +139,13 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
   return (
     <div className="space-y-10 animate-in fade-in duration-700 max-w-7xl mx-auto pb-24">
       {/* HEADER SECTION */}
-      <section className="bg-slate-950 rounded-[2.5rem] md:rounded-[4rem] p-8 md:p-16 text-white relative overflow-hidden shadow-2xl border-b-[8px] md:border-b-[12px] border-indigo-600">
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-10 md:gap-16">
-          <div className="space-y-8 md:space-y-10 flex-1 w-full text-center lg:text-left">
+      <section className="bg-slate-950 rounded-3xl p-8 lg:p-10 text-white relative overflow-hidden shadow-xl border-b-[8px] border-indigo-600">
+        <div className="relative z-10 grid lg:grid-cols-[minmax(0,1fr)_19rem] gap-8 lg:gap-10 items-stretch">
+          <div className="space-y-6 flex-1 w-full text-center lg:text-left">
             <div className="flex flex-wrap justify-center lg:justify-start gap-3">
-               <div className="flex items-center gap-2 bg-indigo-500/20 text-indigo-400 px-5 py-2 rounded-full border border-indigo-500/20">
+               <div className="flex items-center gap-2 bg-indigo-500/20 text-indigo-300 px-4 py-2 rounded-full border border-indigo-500/20">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-[10px] font-black uppercase tracking-widest italic">Version 3.0 Plan Active</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Today's plan is ready</span>
                </div>
                <button 
                  onClick={shareApp}
@@ -166,47 +166,47 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                )}
             </div>
             
-            <div className="space-y-4">
-              <h1 className="text-6xl sm:text-7xl md:text-9xl font-black tracking-tighter leading-[0.8] italic">Learning <span className="text-indigo-500 not-italic">Dashboard</span></h1>
-              <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[10px] sm:text-xs">SAT mastery, weak words, goals, and review timing</p>
+            <div className="space-y-3">
+              <h1 className="text-4xl lg:text-6xl font-black tracking-tight leading-[1.02]">Ready for today's <span className="text-indigo-400">smart review?</span></h1>
+              <p className="text-slate-400 font-medium text-sm lg:text-base">Practice the words you are most likely to forget in one focused session.</p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 md:gap-8 pt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
                <Tooltip text="Percentage of the SAT word library you have fully mastered.">
                  <div className="space-y-1">
-                   <p className="text-4xl md:text-5xl font-black">{stability}%</p>
+                   <p className="text-3xl lg:text-4xl font-black">{stability}%</p>
                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Library Mastery</p>
                  </div>
                </Tooltip>
                <Tooltip text="Total number of words that have reached Level 4 (Mastered).">
-                 <div className="border-l border-slate-800 pl-8 space-y-1">
-                   <p className="text-4xl md:text-5xl font-black text-emerald-400">{totalMastered}</p>
+                 <div className="border-l border-slate-800 pl-4 space-y-1">
+                   <p className="text-3xl lg:text-4xl font-black text-emerald-400">{totalMastered}</p>
                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Mastered Total</p>
                  </div>
                </Tooltip>
                <Tooltip text="Total experience points earned through study sessions and games.">
-                 <div className="border-l border-slate-800 pl-8 space-y-1">
-                   <p className="text-4xl md:text-5xl font-black text-indigo-400">{progress.xp.toLocaleString()}</p>
+                 <div className="border-l border-slate-800 pl-4 space-y-1">
+                   <p className="text-3xl lg:text-4xl font-black text-indigo-400">{progress.xp.toLocaleString()}</p>
                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Earned XP</p>
                  </div>
                </Tooltip>
                <Tooltip text="Virtual currency used to unlock premium features and power-ups.">
-                 <div className="border-l border-slate-800 pl-8 space-y-1">
-                   <p className="text-4xl md:text-5xl font-black text-amber-400">{progress.credits.toLocaleString()}</p>
+                 <div className="border-l border-slate-800 pl-4 space-y-1">
+                   <p className="text-3xl lg:text-4xl font-black text-amber-400">{progress.credits.toLocaleString()}</p>
                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Credits (VC)</p>
                  </div>
                </Tooltip>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="grid sm:grid-cols-[1.7fr_1fr_1fr] gap-3 pt-2">
               <Tooltip text="Instantly start a session with 20 random words from your current review list." position="bottom">
-                <button onClick={() => onQuickStart()} className="w-full bg-white text-slate-950 py-6 md:py-8 rounded-[2rem] md:rounded-[2.5rem] font-black text-xl md:text-2xl hover:bg-indigo-500 hover:text-white transition-all active:scale-95 shadow-2xl px-12">Start Smart Review</button>
+                <button onClick={() => onQuickStart()} className="w-full bg-white text-slate-950 py-5 rounded-2xl font-black text-lg hover:bg-indigo-500 hover:text-white transition-all active:scale-95 shadow-xl px-6">Start Smart Review</button>
               </Tooltip>
               <Tooltip text="A fast-paced review of high-yield Science vocabulary." position="bottom">
-                <button onClick={onScienceSprint} className="w-full px-6 py-6 md:py-8 bg-emerald-600/20 text-emerald-400 rounded-[2rem] md:rounded-[3rem] font-black text-[10px] md:text-[11px] uppercase border border-emerald-500/30 hover:bg-emerald-600 hover:text-white transition-all">Science Sprint</button>
+                <button onClick={onScienceSprint} className="w-full px-5 py-5 bg-emerald-600/20 text-emerald-300 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-emerald-500/30 hover:bg-emerald-600 hover:text-white transition-all">Science Sprint</button>
               </Tooltip>
               <Tooltip text="Customize your study session: select difficulty, domains, and mastery levels." position="bottom">
-                <button onClick={() => onNavigate(AppScreen.STUDY_SETUP)} className="w-full px-6 py-6 md:py-8 bg-indigo-600/20 text-indigo-400 rounded-[2rem] md:rounded-[3rem] font-black text-[10px] md:text-[11px] uppercase border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition-all">Custom Session</button>
+                <button onClick={() => onNavigate(AppScreen.STUDY_SETUP)} className="w-full px-5 py-5 bg-indigo-600/20 text-indigo-300 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition-all">Custom Session</button>
               </Tooltip>
             </div>
 
@@ -231,10 +231,10 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
             </div>
           </div>
 
-          <div className="w-full lg:w-96 space-y-4">
-             <div className="bg-slate-900/60 p-8 md:p-10 rounded-[3rem] md:rounded-[4rem] border border-slate-800 backdrop-blur-3xl space-y-6 md:space-y-8 relative overflow-hidden">
-                <h3 className="text-xl font-black text-white italic">Unit <span className="text-indigo-400">Breakdown</span></h3>
-                <div className="space-y-6">
+          <div className="w-full space-y-4">
+             <div className="h-full bg-slate-900/60 p-7 rounded-3xl border border-slate-800 backdrop-blur-3xl space-y-6 relative overflow-hidden">
+                <h3 className="text-lg font-black text-white">Mastery <span className="text-indigo-400">breakdown</span></h3>
+                <div className="space-y-5">
                    {[3, 2, 1, 0].map(lvl => {
                       const count = masteryBreakdown[lvl as MasteryLevel];
                       const config = MASTERY_COLORS[lvl as MasteryLevel];

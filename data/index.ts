@@ -1,4 +1,4 @@
 
-import { TITAN_MASTER_DATA } from './titan_master';
+import { VOCABULARY_DATA } from './vocabulary.generated.ts';
 
-export const ALL_WORDS_RAW = TITAN_MASTER_DATA;
+export const ALL_WORDS = VOCABULARY_DATA;

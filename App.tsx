@@ -67,6 +67,8 @@ const getLocalKey = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+const GUEST_MODE_KEY = 'vv:guest_mode';
+
 const toCloudProgressSummary = (p: UserProgress) => {
   const {
     wordMastery: _wordMastery,
@@ -108,7 +110,11 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   const [titanLibrary, setTitanLibrary] = useState<Word[]>([]);
   const [progress, setProgress] = useState<UserProgress>(bootData.progress);
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(() =>
+    typeof window !== 'undefined' && localStorage.getItem(GUEST_MODE_KEY) === 'true'
+      ? 'guest'
+      : null
+  );
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
@@ -150,6 +156,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       console.log("Auth State Changed:", firebaseUser ? "Logged In" : "Logged Out");
       
       if (firebaseUser) {
+        localStorage.removeItem(GUEST_MODE_KEY);
         // 1. Set user state IMMEDIATELY to trigger UI transition
         setUser(firebaseUser);
         setUserEmail(firebaseUser.email || firebaseUser.uid);
@@ -178,7 +185,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
         }
       } else {
         setUser(null);
-        setUserEmail(null);
+        setUserEmail(localStorage.getItem(GUEST_MODE_KEY) === 'true' ? 'guest' : null);
         setIsInitialSyncDone(false);
       }
     });
@@ -454,6 +461,8 @@ const App: React.FC<AppProps> = ({ bootData }) => {
       if (!auth) {
         throw new Error("Firebase Auth not initialized. Check your API key.");
       }
+
+      localStorage.removeItem(GUEST_MODE_KEY);
       
       if (isSignUp) {
         console.log("Creating new account...");
@@ -838,6 +847,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                     <User className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-300" size={24} />
                     <input 
                       type="email" 
+                      autoComplete="email"
                       placeholder="student@email.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
@@ -860,6 +870,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
 
                     <input
                       type={showPassword ? 'text' : 'password'}
+                      autoComplete={isSignUp ? 'new-password' : 'current-password'}
                       placeholder="********"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
@@ -893,20 +904,23 @@ const App: React.FC<AppProps> = ({ bootData }) => {
 
                 <div className="flex flex-col gap-4">
                   <button 
-                    type="submit" 
-                    disabled={isLoggingIn}
-                    className="w-full py-3.5 md:py-7 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
+                    type="button"
+                    onClick={() => {
+                      localStorage.setItem(GUEST_MODE_KEY, 'true');
+                      setUserEmail('guest');
+                    }}
+                    className="w-full py-3.5 md:py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-[0.16em] text-[10px] md:text-xs shadow-xl hover:bg-indigo-700 transition-all"
                   >
-                    {isLoggingIn ? <Loader2 className="animate-spin" size={24} /> : <LogIn size={24} />}
-                    {isLoggingIn ? 'Signing in...' : isSignUp ? 'Create Account' : 'Sign In'}
+                    Start Learning - No Account Needed
                   </button>
 
-                  <button 
-                    type="button"
-                    onClick={() => setUserEmail('guest')}
-                    className="w-full py-3.5 md:py-6 bg-indigo-50 text-indigo-600 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] border border-indigo-100 hover:bg-indigo-100 transition-all"
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="w-full py-3.5 md:py-6 bg-white text-slate-700 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs border-2 border-slate-200 hover:border-slate-900 hover:text-slate-950 active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
                   >
-                    Continue as Guest
+                    {isLoggingIn ? <Loader2 className="animate-spin" size={24} /> : <LogIn size={24} />}
+                    {isLoggingIn ? 'Signing in...' : isSignUp ? 'Create Account' : 'Sign In to Sync'}
                   </button>
                 </div>
 
@@ -984,6 +998,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                  ) : (
                    <button 
                      onClick={() => {
+                       localStorage.removeItem(GUEST_MODE_KEY);
                        setUserEmail(null);
                      }} 
                      className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-[8px] uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg animate-pulse" 

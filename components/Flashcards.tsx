@@ -162,7 +162,7 @@ const Flashcards: React.FC<FlashcardsProps> = ({ words, currentMastery, onWordUp
 
               <div className="p-6 md:p-8 bg-slate-50 rounded-[2rem] md:rounded-[3rem] border border-slate-100 text-slate-600 text-sm md:text-base font-medium leading-relaxed italic relative">
                 <span className="absolute -top-3 left-6 md:left-8 bg-white px-3 py-1 text-[7px] md:text-[8px] font-black uppercase tracking-widest border border-slate-100 text-slate-400">
-                  SAT-style context
+                  Meaning in context
                 </span>
                 “{word.example}”
               </div>

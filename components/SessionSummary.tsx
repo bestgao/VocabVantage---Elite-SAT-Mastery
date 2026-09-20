@@ -40,10 +40,9 @@ const SessionSummary: React.FC<SessionSummaryProps> = ({ results, onContinue }) 
         >
           Return to Dashboard
         </button>
-        <div className="flex justify-center gap-6 md:gap-8 text-[8px] md:text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">
-          <span>Efficiency: High</span>
-          <span>Retention: +4.2%</span>
-        </div>
+        <p className="text-center text-xs md:text-sm font-semibold text-slate-400">
+          Nice work. Your next review will bring back the words that need attention first.
+        </p>
       </div>
     </div>
   );

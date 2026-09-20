@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/VocabVantage---Elite-SAT-Mastery/',
+  // Relative assets work on GitHub Pages and when hosted at the domain root.
+  base: './',
   server: {
     port: 3000,
     host: '0.0.0.0',
