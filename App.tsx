@@ -6,6 +6,7 @@ import { XP_PER_WORD_UPGRADE } from './constants';
 import { STABLE_KEY, saveVault, BootResult, runPersistenceQA, INITIAL_PROGRESS, deepHydrate } from './persistence';
 import { auth, db } from './firebase';
 import { buildSmartReview, nextMasteryFromReview, nextSRS, priorityForWord, reviewQualityFromResult } from './services/adaptive';
+import { applyDiagnosticResult } from './services/diagnostic';
 
 
 import { 
@@ -673,30 +674,17 @@ const App: React.FC<AppProps> = ({ bootData }) => {
   }, [fullLibrary]);
 
   const handleDiagnosticComplete = useCallback((result: DiagnosticResult) => {
-    updateProgress(prev => ({
-      ...prev,
-      onboardingCompletedAt: prev.onboardingCompletedAt || Date.now(),
-      diagnosticScore: result.readinessScore,
-      diagnosticEstimatedKnownWords: result.estimatedKnownWords,
-      diagnosticCorrect: result.correct,
-      diagnosticTotal: result.total,
-      diagnosticWeakestDomain: result.weakestDomain,
-      diagnosticCompletedAt: result.completedAt,
-      diagnosticHistory: [
-        ...(prev.diagnosticHistory || []),
-        {
-          score: result.readinessScore,
-          correct: result.correct,
-          total: result.total,
-          weakestDomain: result.weakestDomain,
-          completedAt: result.completedAt
-        }
-      ].slice(-10),
-      recommendedDailyWords: result.recommendedDailyWords,
-      dailyMasteryGoal: result.recommendedDailyWords
-    }), true);
+    const nextProgress = applyDiagnosticResult(progressRef.current, result);
+    progressRef.current = nextProgress;
+    updateProgress(() => nextProgress, true);
+
+    if (user) {
+      syncGranularProgress(user.uid, nextProgress).catch(error => {
+        console.error('Failed to sync diagnostic evidence', error);
+      });
+    }
     setScreen(AppScreen.DASHBOARD);
-  }, [updateProgress]);
+  }, [updateProgress, user]);
 
   const mobileLearningStats = useMemo(() => {
     const now = Date.now();
@@ -1230,6 +1218,7 @@ const App: React.FC<AppProps> = ({ bootData }) => {
                 onNavigate={setScreen} 
                 onUpdateGoal={(type, val) => updateProgress(prev => ({ ...prev, [type]: val }), true)}
                 onQuickStart={startSmartReview}
+                onRetakeDiagnostic={() => setScreen('DIAGNOSTIC')}
             onExport={() => {
               const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(progress));
               const downloadAnchorNode = document.createElement('a');

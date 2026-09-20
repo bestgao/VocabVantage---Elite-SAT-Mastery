@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { UserProgress, AppScreen, MasteryLevel, Word } from '../types';
 import { MASTERY_COLORS } from '../constants';
-import { Award, Bot, Gift, HelpCircle, Trophy, X, Info, ShieldCheck, Database, Download } from 'lucide-react';
+import { Award, Bot, Gift, HelpCircle, Trophy, X, Info, ShieldCheck, Database, Download, Target, RotateCcw, ArrowRight } from 'lucide-react';
 import { priorityForWord } from '../services/adaptive';
 import Tooltip from './Tooltip';
 
@@ -14,6 +14,7 @@ interface DashboardProps {
   onNavigate: (screen: AppScreen) => void;
   onUpdateGoal: (type: string, val: number) => void;
   onQuickStart: (words?: Word[]) => void;
+  onRetakeDiagnostic: () => void;
   onExport: () => void;
   onRunQA: () => void;
 }
@@ -22,7 +23,7 @@ const getLocalKey = (date: Date = new Date()) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, bootLog, onNavigate, onUpdateGoal, onQuickStart, onExport, onRunQA }) => {
+const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, bootLog, onNavigate, onUpdateGoal, onQuickStart, onRetakeDiagnostic, onExport, onRunQA }) => {
   const [showForensics, setShowForensics] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showDomainAudit, setShowDomainAudit] = useState(false);
@@ -117,7 +118,9 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
   }, [progress.activityLedger, todayKey]);
 
   const maxActivity = Math.max(...last7Days.map(d => d.reviewed), 10);
+  const hasActivity = last7Days.some(d => d.reviewed > 0 || d.mastered > 0);
   const totalMastered = Object.values(progress.wordMastery).filter(l => l === 3).length;
+  const assessedWords = Object.keys(progress.wordMastery).length;
   const librarySize = Math.max(words.length, 1); 
   const stability = Math.round((totalMastered / librarySize) * 100);
 
@@ -172,10 +175,10 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
-               <Tooltip text="Percentage of the SAT word library you have fully mastered.">
+               <Tooltip text="Percentage of the SAT word library verified through repeated, spaced practice.">
                  <div className="space-y-1">
                    <p className="text-3xl lg:text-4xl font-black">{stability}%</p>
-                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Library Mastery</p>
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verified Mastery</p>
                  </div>
                </Tooltip>
                <Tooltip text="Total number of words that have reached Level 4 (Mastered).">
@@ -238,9 +241,9 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                    {[3, 2, 1, 0].map(lvl => {
                       const count = masteryBreakdown[lvl as MasteryLevel];
                       const config = MASTERY_COLORS[lvl as MasteryLevel];
-                      const p = (count / librarySize) * 100;
+                      const p = (count / Math.max(assessedWords, 1)) * 100;
                       return (
-                        <Tooltip key={lvl} text={`${config.label.split(':')[1]} words: ${count} units.`}>
+                        <Tooltip key={lvl} wrapperClassName="block w-full" text={`${config.label.split(':')[1]} words: ${count} units.`}>
                           <div className="space-y-2">
                              <div className="flex justify-between gap-3 text-[10px] font-black uppercase tracking-widest">
                                 <span className={`${config.text} truncate`}>{config.label.split(':')[1]}</span>
@@ -254,12 +257,51 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
                       );
                    })}
                 </div>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  {assessedWords > 0 ? `${assessedWords} assessed words` : 'Complete a review to begin'}
+                </p>
                 <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl" />
              </div>
           </div>
         </div>
         <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
       </section>
+
+      {typeof progress.diagnosticScore === 'number' && (
+        <section className="bg-white border border-indigo-100 shadow-sm p-6 md:p-8 grid lg:grid-cols-[1.35fr_1fr_auto] gap-6 items-center">
+          <div className="flex items-start gap-4 min-w-0">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+              <Target size={24} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Placement complete</p>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mt-1">
+                <p className="text-3xl font-black text-slate-900">{progress.diagnosticScore}<span className="text-base text-slate-400">/100 readiness</span></p>
+                <p className="text-sm font-bold text-slate-500">{progress.diagnosticCorrect}/{progress.diagnosticTotal} correct</p>
+              </div>
+              <p className="text-sm text-slate-500 mt-2">
+                Estimated vocabulary: {(progress.diagnosticEstimatedKnownWords || 0).toLocaleString()} words. Focus first on {progress.diagnosticWeakestDomain || 'General'}.
+              </p>
+            </div>
+          </div>
+
+          <div className="lg:border-l lg:border-slate-100 lg:pl-6">
+            <p className="font-black text-slate-900">Your plan: {progress.recommendedDailyWords || progress.dailyMasteryGoal} words a day</p>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              Readiness is an estimate. Verified mastery is earned through repeated, spaced reviews, so starting at 0 mastered is expected.
+            </p>
+          </div>
+
+          <div className="flex lg:flex-col gap-2">
+            <button onClick={() => onQuickStart()} className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-colors">
+              Start plan <ArrowRight size={16} />
+            </button>
+            <button onClick={onRetakeDiagnostic} className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-slate-100 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">
+              <RotateCcw size={15} /> Retake
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* DETAILED PROGRESS AUDIT GRID */}
       <section className="space-y-6">
@@ -346,6 +388,12 @@ const Dashboard: React.FC<DashboardProps> = ({ words, progress, lastSavedAt, boo
           </div>
           
           <div className="flex items-end justify-between h-48 sm:h-72 gap-2 sm:gap-6 pb-2 relative border-b border-slate-50">
+            {!hasActivity && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+                <p className="font-black text-slate-700">Your first session will appear here</p>
+                <p className="text-xs text-slate-400 mt-1">Start a smart review to build your 7-day learning trend.</p>
+              </div>
+            )}
             {last7Days.map((d, i) => {
               const reviewH = (d.reviewed / (maxActivity || 1)) * 100;
               const masteryRatio = d.mastered / (d.reviewed || 1);

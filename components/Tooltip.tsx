@@ -6,9 +6,10 @@ interface TooltipProps {
   text: string;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
+  wrapperClassName?: string;
 }
 
-const Tooltip: React.FC<TooltipProps> = ({ text, children, position = 'top' }) => {
+const Tooltip: React.FC<TooltipProps> = ({ text, children, position = 'top', wrapperClassName = '' }) => {
   const [isVisible, setIsVisible] = useState(false);
   const timeoutRef = useRef<number | null>(null);
 
@@ -45,7 +46,7 @@ const Tooltip: React.FC<TooltipProps> = ({ text, children, position = 'top' }) =
 
   return (
     <div 
-      className="relative inline-block"
+      className={`relative inline-block ${wrapperClassName}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

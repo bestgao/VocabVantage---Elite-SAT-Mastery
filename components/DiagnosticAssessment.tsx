@@ -1,16 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Word } from '../types';
 import { buildLocalContextQuestion } from '../services/contextQuestions';
+import type { DiagnosticResult } from '../services/diagnostic';
 
-export interface DiagnosticResult {
-  readinessScore: number;
-  estimatedKnownWords: number;
-  correct: number;
-  total: number;
-  weakestDomain: string;
-  completedAt: number;
-  recommendedDailyWords: number;
-}
+export type { DiagnosticResult } from '../services/diagnostic';
 
 interface DiagnosticAssessmentProps {
   words: Word[];
@@ -105,12 +98,17 @@ const DiagnosticAssessment: React.FC<DiagnosticAssessmentProps> = ({ words, onCo
 
     onComplete({
       readinessScore,
-      estimatedKnownWords: Math.round(2250 * readinessScore / 100),
+      estimatedKnownWords: Math.round(words.length * readinessScore / 100),
       correct: newAnswers.filter(a => a.correct).length,
       total: newAnswers.length,
       weakestDomain,
       completedAt: Date.now(),
-      recommendedDailyWords
+      recommendedDailyWords,
+      answers: newAnswers.map(answer => ({
+        wordId: answer.word.id,
+        term: answer.word.term,
+        correct: answer.correct
+      }))
     });
   };
 

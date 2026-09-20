@@ -4,6 +4,31 @@ import { masteryFromEvidence, nextMasteryFromReview, nextSRS } from '../services
 import { GET_MASTER_CORE } from '../database.ts';
 import { normalizeVocabularyRow } from '../services/vocabParser.ts';
 import { VOLUME_9 } from '../data/volume_9.ts';
+import { applyDiagnosticResult } from '../services/diagnostic.ts';
+import type { UserProgress } from '../types.ts';
+
+const freshProgress = (): UserProgress => ({
+  version: 21,
+  revision: 0,
+  updatedAt: 0,
+  wordMastery: {},
+  wordSRS: {},
+  wordStats: {},
+  activityLedger: {},
+  streak: 0,
+  lastActive: '',
+  xp: 0,
+  credits: 500,
+  inventory: { streakFreezes: 1, xpBoosters: 0 },
+  dailyMasteryGoal: 10,
+  weeklyMasteryGoal: 50,
+  monthlyMasteryGoal: 200,
+  quarterlyMasteryGoal: 500,
+  annualMasteryGoal: 1500,
+  milestonesClaimed: [],
+  lastConfig: { levels: ['Core'], freqs: ['High'], masteries: [0] },
+  customWords: []
+});
 
 describe('adaptive learning', () => {
   it('schedules failed words quickly', () => {
@@ -45,6 +70,58 @@ describe('adaptive learning', () => {
     const srs = { lastReviewed: '', nextReviewAt: '', intervalDays: 21 };
     const level = nextMasteryFromReview(2, stat, srs, true, 'recognition', 3);
     assert.equal(level, 2);
+  });
+});
+
+describe('diagnostic handoff', () => {
+  it('turns placement answers into honest first-study evidence', () => {
+    const completedAt = new Date(2026, 8, 20, 12).getTime();
+    const next = applyDiagnosticResult(freshProgress(), {
+      readinessScore: 50,
+      estimatedKnownWords: 1140,
+      correct: 1,
+      total: 2,
+      weakestDomain: 'Science',
+      completedAt,
+      recommendedDailyWords: 12,
+      answers: [
+        { wordId: 'known', term: 'lucid', correct: true },
+        { wordId: 'missed', term: 'abstruse', correct: false }
+      ]
+    });
+
+    assert.equal(next.wordMastery.known, 1);
+    assert.equal(next.wordMastery.missed, 0);
+    assert.equal(next.wordStats.known.correct, 1);
+    assert.equal(next.wordStats.missed.wrong, 1);
+    assert.equal(next.wordSRS.known.intervalDays, 3);
+    assert.ok(next.wordSRS.missed.intervalDays < 1);
+    assert.equal(next.wordSRS.missed.nextReviewAt, new Date(completedAt).toISOString());
+    assert.equal(Object.values(next.activityLedger)[0].reviewed, 2);
+    assert.equal(next.diagnosticScore, 50);
+  });
+
+  it('does not erase verified mastery after one missed retest answer', () => {
+    const progress = freshProgress();
+    progress.wordMastery.known = 3;
+    progress.wordStats.known = {
+      wordId: 'known', term: 'lucid', attempts: 8, correct: 8, wrong: 0,
+      streak: 4, lastResult: 'correct', lastSeenAt: 0, masteryLevel: 3
+    };
+
+    const next = applyDiagnosticResult(progress, {
+      readinessScore: 0,
+      estimatedKnownWords: 0,
+      correct: 0,
+      total: 1,
+      weakestDomain: 'General',
+      completedAt: Date.now(),
+      recommendedDailyWords: 15,
+      answers: [{ wordId: 'known', term: 'lucid', correct: false }]
+    });
+
+    assert.equal(next.wordMastery.known, 3);
+    assert.equal(next.wordStats.known.wrong, 1);
   });
 });
 
